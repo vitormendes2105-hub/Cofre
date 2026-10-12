@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261012-3">
+<meta name="cofre-version" content="20261012-4">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -266,8 +266,8 @@
     .card tr>td:nth-child(3){grid-area:desc;font-weight:600;word-break:break-word;} .card tr>td:nth-child(4){grid-area:cat;}
     .card tr>td:nth-child(5){grid-area:amt;text-align:right;font-weight:700;} .card tr>td:nth-child(6){grid-area:act;justify-self:end;}
   }
-  /* ===== Lançamentos em cartões também no iPad e em janelas médias (só a tabela de lançamentos) ===== */
-  @media (min-width:701px) and (max-width:1100px){
+  /* ===== Lançamentos em cartões em TODAS as larguras (só a tabela de lançamentos) ===== */
+  @media (min-width:701px){
     .card table.txtable,.card table.txtable tbody{display:block;} .card table.txtable thead{display:none;}
     .card table.txtable tr{display:grid;grid-template-columns:30px auto 1fr auto;grid-template-areas:"chk desc desc amt" "chk date cat act";gap:4px 14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
     .card table.txtable td{border:none;padding:0;}
@@ -1849,7 +1849,7 @@ function transactionsView(){
           <button class="btn btn-danger" onclick="deleteSelectedTx()">${icon('trash')} Excluir</button>
         </div>`;
       })() : ''}
-      ${txs.length ? `<table class="txtable">
+      ${txs.length ? `<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin:0 0 4px 4px;cursor:pointer;"><input type="checkbox" style="width:auto;margin:0;" ${allSelected?'checked':''} onchange="toggleSelectAllTx(this.checked)"/> Selecionar todos</label><table class="txtable">
         <thead><tr>
           <th><input type="checkbox" ${allSelected?'checked':''} onchange="toggleSelectAllTx(this.checked)" title="Selecionar todos os visíveis"/></th>
           <th>Data</th><th>Descrição</th><th>Categoria</th><th style="text-align:right">Valor</th><th></th>
