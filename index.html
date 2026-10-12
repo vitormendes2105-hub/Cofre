@@ -4,10 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cofre — Painel Financeiro</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#e4e9df">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cofre">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
   :root{
     --bg:#eef1f4;
@@ -199,6 +206,19 @@
   nav button svg{flex:0 0 auto;} nav button span{font-size:10px;font-weight:600;}
   .plan{background:var(--gold-soft);border-radius:16px;padding:12px 16px;font-size:13.5px;line-height:1.65;margin-bottom:8px;}
   .plan b{color:var(--brand);} .chip.on{background:var(--brand-deep);color:#fff;border-color:var(--brand-deep);}
+  @media (min-width:900px){
+    .app{padding-left:104px;}
+    nav{position:fixed;left:16px;top:50%;transform:translateY(-50%);flex-direction:column;gap:4px;margin:0;padding:10px;background:rgba(255,255,255,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:30px;box-shadow:var(--shadow);z-index:45;}
+    nav button{width:64px;height:60px;padding:0;border:none;background:transparent;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;}
+    nav button.active{background:var(--brand-deep);color:#fff;}
+  }
+  @media (max-width:899px){
+    .app{padding-bottom:120px;}
+    nav{position:fixed;left:0;right:0;bottom:0;margin:0;flex-wrap:nowrap;justify-content:space-around;gap:0;padding:8px 6px calc(8px + env(safe-area-inset-bottom));background:rgba(255,255,255,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--border);z-index:45;}
+    nav button{flex:1;padding:6px 0;border:none;background:transparent;border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:2px;}
+    nav button.active{background:var(--brand-soft);color:var(--brand-deep);}
+    .fab{bottom:92px;}
+  }
 
   .orc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:16px;}
   .orc{display:flex;gap:14px;align-items:center;padding:16px;border-radius:20px;background:var(--surface-2);border:1px solid transparent;}
@@ -230,34 +250,19 @@
   .obtot{background:linear-gradient(180deg,var(--brand-soft),#f1f6f3);border-radius:20px;padding:14px 18px;margin-top:14px;}
   .obsem{background:var(--brand-soft);border:1px solid #cfe3d9;border-radius:22px;padding:16px 18px;}
 
-  /* ===== Barra de abas flutuante, recolhível e móvel ===== */
-  #mainnav{position:fixed;z-index:45;display:flex;align-items:center;gap:4px;margin:0;padding:8px;flex-wrap:nowrap;top:auto;left:auto;right:auto;bottom:auto;transform:none;max-width:calc(100vw - 16px);background:rgba(255,255,255,.86);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.95);border-radius:30px;box-shadow:0 18px 40px -12px rgba(4,42,29,.28),0 2px 6px rgba(4,42,29,.06);}
-  #mainnav button:not(.navgrip):not(.navtoggle){display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:60px;height:56px;padding:0;border:none;background:transparent;border-radius:20px;color:var(--muted);font-family:'Inter';}
-  #mainnav button.active{background:var(--brand-deep);color:#fff;}
-  #mainnav.nv-left,#mainnav.nv-right{flex-direction:column;top:50%;transform:translateY(-50%);max-height:calc(100vh - 24px);overflow-y:auto;}
-  #mainnav.nv-left{left:10px;} #mainnav.nv-right{right:10px;}
-  #mainnav.nv-top,#mainnav.nv-bottom{flex-direction:row;left:50%;transform:translateX(-50%);}
-  #mainnav.nv-top{top:calc(env(safe-area-inset-top,0px) + 10px);} #mainnav.nv-bottom{bottom:calc(env(safe-area-inset-bottom,0px) + 10px);}
-  .navgrip,.navtoggle{display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--muted);cursor:grab;touch-action:none;width:30px;height:30px;padding:0;border-radius:15px;flex:0 0 auto;}
-  .navtoggle{cursor:pointer;}
-  #mainnav.collapsed{padding:6px;border-radius:999px;}
-  #mainnav.collapsed button:not(.navtoggle),#mainnav.collapsed .navgrip{display:none;}
-  #mainnav.collapsed .navtoggle{width:48px;height:48px;border-radius:50%;background:var(--brand-deep);color:#fff;}
-  #mainnav.dragging{opacity:.92;}
-  @media (min-width:700px){ body[data-nav=left]:not(.navc) .app{padding-left:108px;} body[data-nav=right]:not(.navc) .app{padding-right:108px;} }
-  body[data-nav=top] .app{padding-top:96px;} body[data-nav=top] header{top:84px;} body[data-nav=bottom] .app{padding-bottom:110px;}
-  body[data-nav=bottom] .fab{bottom:calc(env(safe-area-inset-bottom,0px) + 88px);}
-  @media (max-width:520px){ #mainnav button:not(.navgrip):not(.navtoggle){width:44px;height:50px;} #mainnav button span{font-size:9px;} #mainnav{padding:6px;gap:2px;} }
-  /* ===== Lançamentos no celular ===== */
-  @media (max-width:700px){
-    .card{padding:16px;}
-    .card table,.card tbody{display:block;} .card thead{display:none;}
-    .card tr{display:grid;grid-template-columns:30px auto 1fr auto;grid-template-areas:"chk desc desc amt" "chk date cat act";gap:4px 10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
-    .card td{border:none;padding:0;}
-    .card tr>td:nth-child(1){grid-area:chk;} .card tr>td:nth-child(2){grid-area:date;font-size:12px;color:var(--muted);}
-    .card tr>td:nth-child(3){grid-area:desc;font-weight:600;word-break:break-word;} .card tr>td:nth-child(4){grid-area:cat;}
-    .card tr>td:nth-child(5){grid-area:amt;text-align:right;font-weight:700;} .card tr>td:nth-child(6){grid-area:act;justify-self:end;}
-  }
+  /* ===== Sincronização (Supabase) ===== */
+  .sync-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);background:#fff;color:var(--ink);border-radius:999px;padding:8px 13px;font:600 12px 'Inter',sans-serif;cursor:pointer;margin-right:8px;white-space:nowrap;}
+  .sync-chip .sdot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+  .sync-chip.ok .sdot{background:var(--green);} .sync-chip.busy .sdot,.sync-chip.warn .sdot{background:var(--gold);} .sync-chip.err .sdot{background:var(--red);}
+  .sync-modal p{font-size:13.5px;line-height:1.5;margin:0 0 12px;}
+  .sy-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .sy-stack{display:flex;flex-direction:column;gap:8px;} .sy-stack .btn{justify-content:center;width:100%;}
+  .sy-cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px;}
+  .sy-cmp>div{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:12.5px;line-height:1.45;}
+  .sy-links{font-size:12.5px;margin-top:12px;color:var(--muted);} .sy-links a{color:var(--brand);font-weight:600;}
+  .sy-small{font-size:12px;color:var(--muted);}
+  .sync-toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;z-index:300;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center;}
+  @media(max-width:420px){ .sync-chip{padding:7px 10px;margin-right:6px;} .sync-chip.ok .slabel{display:none;} .sy-cmp{grid-template-columns:1fr;} }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 </head>
@@ -378,6 +383,7 @@ function migrateDashboardOrder(){
 async function saveState(){
   try{ await storageSet('cofre-state', JSON.stringify(state)); }
   catch(e){ console.error('erro ao salvar', e); }
+  try{ syAfterSave(); }catch(e){ console.error('sync', e); }
 }
 
 // ---------- utilidades ----------
@@ -801,9 +807,9 @@ function render(){
   app.innerHTML = `
     <header>
       <div class="brand"><span class="wordmark">cofre</span></div>
-      <button class="hdr-cta" onclick="openTxModal()">Novo lançamento</button>
+      <div style="display:flex;align-items:center">${syChipHtml()}<button class="hdr-cta" onclick="openTxModal()">Novo lançamento</button></div>
     </header>
-    <nav id="mainnav" class="nv-${navPos()}${navCollapsed()?' collapsed':''}">${navCollapsed()?'':NAVGRIP}
+    <nav>
       ${tabBtn('dashboard','Painel')}
       ${tabBtn('balanco','Balanço do mês')}
       ${tabBtn('orcamentos','Orçamentos')}
@@ -811,11 +817,10 @@ function render(){
       ${tabBtn('contas','Contas a pagar')}
       ${tabBtn('cartoes','Cartões & Parcelas')}
       ${tabBtn('categorias','Configurações')}
-      ${navToggleBtn()}
     </nav>
     <div id="content"></div>
     <button class="fab" onclick="openTxModal()" title="Adicionar lançamento">${icon('plus')}</button>
-    <div class="footer-note">Seus dados ficam salvos automaticamente neste dispositivo/navegador.</div>
+    <div class="footer-note">${syFooterText()}</div>
   `;
   renderContent();
   if(ui.modal) renderModal();
@@ -824,7 +829,7 @@ function render(){
 function setTab(id){ ui.tab = id; render(); }
 function renderContent(){
   const c = document.getElementById('content');
-  document.body.classList.toggle('nobg',!!(state.settings&&state.settings.nobg)); navAttrs();
+  document.body.classList.toggle('nobg',!!(state.settings&&state.settings.nobg));
   if(ui.tab==='dashboard') c.innerHTML = dashboardView();
   if(ui.tab==='lancamentos') c.innerHTML = transactionsView();
   if(ui.tab==='contas') c.innerHTML = billsView();
@@ -1353,7 +1358,6 @@ function settingsView(){
     ${row('Avisar a partir de','Quando um orçamento chega a esta porcentagem do limite, aparece o alerta.',sel('alertPct',[60,70,80,90],st.alertPct||80,'%'))}
     ${row('Meses usados nas médias','Quantos meses anteriores entram na projeção, no gasto variável e na detecção do dia de recebimento.',sel('months',[1,2,3,4,5,6],st.months||3,''))}
     ${row('Ocultar valores','Esconde os valores em dinheiro na tela, útil em público.',`<button class="chip ${st.hide?'on':''}" onclick="setSetting('hide',${!st.hide})">${st.hide?'Ligado':'Desligado'}</button>`)}
-    ${navRows()}
     ${row('Gravura ao fundo','Mostra ou esconde o desenho do casarão atrás das telas.',`<button class="chip ${st.nobg?'':'on'}" onclick="setSetting('nobg',${!st.nobg})">${st.nobg?'Desligada':'Ligada'}</button>`)}
   </div>`+categoriesView();
 }
@@ -1458,31 +1462,6 @@ function categorySectionHtml(type,label){
   const body=`<input placeholder="Filtrar categorias…" data-all="${all?1:0}" oninput="filterCats(this)" style="margin-bottom:10px"/><div class="chipcloud">${chips}</div>${more}<button class="btn btn-ghost" style="margin-top:12px" onclick="addCategory('${type}')">+ Nova categoria de ${label.toLowerCase()}</button>`;
   return cfgCard('cfg2_'+type,`Categorias de ${label} (${rows.length})`,body);
 }
-
-
-// ===== Barra de abas: posição, recolher e arrastar =====
-const NAVGRIP='<span class="navgrip" title="Arraste para mover"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>';
-function navPos(){ return (state.settings||{}).navPos||(window.innerWidth>=900?'left':'bottom'); }
-function navCollapsible(){ return (state.settings||{}).navCollapsible!==false; }
-function navCollapsed(){ return navCollapsible()&&!!(state.settings||{}).navCollapsed; }
-function navAttrs(){ document.body.setAttribute('data-nav',navPos()); document.body.classList.toggle('navc',navCollapsed()); }
-function navToggleBtn(){ if(!navCollapsible()) return ''; const c=navCollapsed(); return `<button class="navtoggle" onclick="navToggleClick()" title="${c?'Abrir abas':'Recolher abas'}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${c?(NAVI[ui.tab]||''):'<path d="M5 12h14"/>'}</svg></button>`; }
-function navToggleClick(){ if(window.__navDragged) return; setSetting('navCollapsed',!navCollapsed()); }
-function navRows(){
-  const st=state.settings||{};
-  const row=(t,d,ctl)=>`<div class="commit-row" style="gap:16px;align-items:center"><span><b>${t}</b><br><small style="color:var(--muted)">${d}</small></span><span>${ctl}</span></div>`;
-  const opts=[['left','Esquerda'],['right','Direita'],['top','Em cima'],['bottom','Embaixo']];
-  return row('Barra de abas recolhível','Mostra um botão para recolher a barra e abrir de novo, como a paleta de canetas das Notas. Desligue para a barra ficar sempre aberta.',`<button class="chip ${navCollapsible()?'on':''}" onclick="setSetting('navCollapsible',${!navCollapsible()})">${navCollapsible()?'Ligado':'Desligado'}</button>`)
-   +row('Posição da barra','Você também pode arrastar a barra pelos pontinhos e soltar perto de uma borda. Em cima e embaixo ela fica na horizontal.',`<select onchange="setSetting('navPos',this.value)" style="width:auto">${opts.map(([v,l])=>`<option value="${v}" ${v===navPos()?'selected':''}>${l}</option>`).join('')}</select>`);
-}
-(function(){
-  let d=null;
-  document.addEventListener('pointerdown',e=>{ const h=e.target.closest&&e.target.closest('.navgrip,.navtoggle'); if(!h) return; const nav=document.getElementById('mainnav'); if(!nav) return; const r=nav.getBoundingClientRect(); d={nav,sx:e.clientX,sy:e.clientY,ox:r.left,oy:r.top,w:r.width,h:r.height,moved:false}; try{h.setPointerCapture(e.pointerId);}catch(_){} },true);
-  document.addEventListener('pointermove',e=>{ if(!d) return; const dx=e.clientX-d.sx, dy=e.clientY-d.sy; if(!d.moved&&Math.hypot(dx,dy)<8) return; d.moved=true; const n=d.nav; n.classList.add('dragging'); n.style.right='auto'; n.style.bottom='auto'; n.style.transform='none'; n.style.left=Math.max(4,Math.min(innerWidth-d.w-4,d.ox+dx))+'px'; n.style.top=Math.max(4,Math.min(innerHeight-d.h-4,d.oy+dy))+'px'; });
-  const end=e=>{ if(!d) return; const dd=d; d=null; if(!dd.moved) return; window.__navDragged=true; setTimeout(()=>{window.__navDragged=false;},350);
-    const x=e.clientX,y=e.clientY,dist={left:x,right:innerWidth-x,top:y,bottom:innerHeight-y}; const pos=Object.keys(dist).sort((a,b)=>dist[a]-dist[b])[0]; setSetting('navPos',pos); };
-  document.addEventListener('pointerup',end); document.addEventListener('pointercancel',end);
-})();
 
 function dashboardView(){
   const order = state.dashboardPrefs.order;
@@ -2334,7 +2313,8 @@ function handleBackupFile(e){
       alert('Esse arquivo não parece ser um backup válido do Cofre.');
       return;
     }
-    askConfirm('Isso vai SUBSTITUIR todos os dados atuais do app pelos dados desse backup. Os dados de agora serão perdidos se você não tiver outro backup deles. Continuar?', ()=>{
+    askConfirm('Isso vai SUBSTITUIR todos os dados atuais do app pelos dados desse backup. Os dados de agora serão perdidos se você não tiver outro backup deles.' + (sy.session ? ' A sincronização está ligada: a nuvem (e os outros aparelhos) também serão substituídos por esse backup.' : '') + ' Continuar?', ()=>{
+      sySafetyCopy('antes-de-restaurar-backup');
       state = Object.assign({ bills:[], dashboardPrefs:{order:['chart','categories','categoriesIncome','commitments','projections'],collapsed:{}} }, loaded);
       if(!state.dashboardPrefs) state.dashboardPrefs = {order:['chart','categories','categoriesIncome','commitments','projections'],collapsed:{}};
       migrateDashboardOrder();
@@ -2350,6 +2330,7 @@ function handleBackupFile(e){
 }
 function deleteAllData(){
   askConfirm('Isso vai apagar TODOS os lançamentos, contas, cartões e categorias personalizadas. Tem certeza?', ()=>{
+    sySafetyCopy('antes-de-apagar-tudo');
     state = {
       transactions: [], bills: [], cards: [],
       dashboardPrefs: { order:['chart','categories','categoriesIncome','commitments','projections'], collapsed:{} },
@@ -2591,7 +2572,424 @@ window.togglePurchasePaid=togglePurchasePaid;
 window.exportBackup=exportBackup; window.handleBackupFile=handleBackupFile;
 window.ui = ui; window.renderModal2 = renderModal2;
 
-loadState();
+// ====================== SINCRONIZAÇÃO COM SUPABASE ======================
+// Todo o código de nuvem fica neste bloco. Se a configuração abaixo estiver
+// vazia (ou a biblioteca não carregar), o Cofre funciona 100% local, como antes.
+// Use SOMENTE a chave pública (publishable ou anon). NUNCA service_role/secret.
+const SYNC_CONFIG = {
+  url: 'https://dihcmxwqqofaicpzeegi.supabase.co',     // ex.: https://abcdefgh.supabase.co
+  key: 'sb_publishable_qqUYCuybtYeggvFdEeeSaw_Kb4CnzQZ',   // sb_publishable_... ou anon (eyJ...)
+  table: 'cofre_sync'
+};
+const SY_META_KEY = 'cofre-sync-meta';      // metadados de sync (fora do backup JSON)
+const SY_SAFE_PREFIX = 'cofre-safety-';     // cópias de segurança locais
+const sy = { client:null, session:null, ready:false, paused:false, status:'off', pending:null,
+  panel:null, panelMsg:'', panelType:'', busy:false, pushTimer:null, pushing:false, pushAgain:false,
+  checking:false, reconciling:false, gateShown:false, lastError:'', emailDraft:'', toastT:null };
+
+function syEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function syConfigured(){ const c=SYNC_CONFIG; return !!(c.url && c.key && /^https:\/\//.test(c.url) && !/COLE_AQUI/.test(c.url+c.key)); }
+function syTime(iso){ try{ return new Date(iso).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}); }catch(e){ return String(iso||''); } }
+function syMeta(){ try{ return JSON.parse(localStorage.getItem(SY_META_KEY)||'null')||{}; }catch(e){ return {}; } }
+function syMetaSet(patch){ const m=Object.assign(syMeta(),patch); try{ localStorage.setItem(SY_META_KEY, JSON.stringify(m)); }catch(e){} return m; }
+function syHash(str){ let h1=0xdeadbeef,h2=0x41c6ce57; for(let i=0;i<str.length;i++){ const ch=str.charCodeAt(i); h1=Math.imul(h1^ch,2654435761); h2=Math.imul(h2^ch,1597334677); } h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909); h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909); return (4294967296*(2097151&h2)+(h1>>>0)).toString(36); }
+function sySnap(){ return JSON.stringify(state); }
+function syStable(o){ if(Array.isArray(o)) return '['+o.map(syStable).join(',')+']'; if(o&&typeof o==='object') return '{'+Object.keys(o).filter(k=>o[k]!==undefined).sort().map(k=>JSON.stringify(k)+':'+syStable(o[k])).join(',')+'}'; return JSON.stringify(o); }
+function syCounts(s){ const n=a=>Array.isArray(a)?a.length:0; s=s||{}; return {tx:n(s.transactions),bills:n(s.bills),cards:n(s.cards),goals:n(s.goals),budgets:n(s.budgets)}; }
+function syHasData(s){ const c=syCounts(s); return c.tx+c.bills+c.cards+c.goals+c.budgets>0; }
+function syDescribe(s){ const c=syCounts(s); return c.tx+' lançamento(s), '+c.bills+' conta(s), '+c.cards+' cartão(ões), '+c.goals+' meta(s), '+c.budgets+' orçamento(s)'; }
+function syValid(p){ return !!(p && typeof p==='object' && Array.isArray(p.transactions) && Array.isArray(p.categories)); }
+function syIsEmptyPayload(p){ return !p || (typeof p==='object' && !Array.isArray(p) && Object.keys(p).length===0); }
+// "sujo" = há mudanças locais ainda não enviadas (comparando com o último estado sincronizado)
+function syDirty(){ const m=syMeta(); return !(sy.session && m.userId===sy.session.user.id && m.baseHash===syHash(sySnap())); }
+
+// ---- cópias de segurança locais (máx. 3, nunca maiores que ~700 KB) ----
+function sySafetyCopy(label, obj){
+  try{
+    const o = obj||state; if(!syHasData(o)) return false;
+    const data = JSON.stringify(o); if(data.length>700000) return false;
+    const ts = Date.now();
+    localStorage.setItem(SY_SAFE_PREFIX+ts, JSON.stringify({ts,label,data}));
+    const keys=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.indexOf(SY_SAFE_PREFIX)===0) keys.push(k); }
+    keys.sort(); while(keys.length>3) localStorage.removeItem(keys.shift());
+    return true;
+  }catch(e){ return false; }
+}
+function sySafetyList(){
+  const out=[]; try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.indexOf(SY_SAFE_PREFIX)===0){ try{ const v=JSON.parse(localStorage.getItem(k)); out.push({key:k,ts:v.ts,label:v.label,data:v.data}); }catch(e){} } } }catch(e){}
+  return out.sort((a,b)=>b.ts-a.ts);
+}
+function syDownload(text,name){ const blob=new Blob([text],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),1500); }
+function syStamp(){ return new Date().toISOString().slice(0,10); }
+function syDownloadLocal(){ syDownload(JSON.stringify(state,null,2),'cofre-backup-'+syStamp()+'.json'); }
+function syDownloadCloud(){ if(sy.pending&&sy.pending.row) syDownload(JSON.stringify(sy.pending.row.payload,null,2),'cofre-backup-nuvem-'+syStamp()+'.json'); }
+function syDownloadSafety(key){ try{ const v=JSON.parse(localStorage.getItem(key)); syDownload(JSON.stringify(JSON.parse(v.data),null,2),'cofre-copia-seguranca-'+new Date(v.ts).toISOString().slice(0,10)+'.json'); }catch(e){ alert('Não foi possível ler essa cópia.'); } }
+
+// ---- status / chip no cabeçalho ----
+const SY_LABEL = { signedout:['Entrar','idle'], syncing:['Sincronizando…','busy'], synced:['Sincronizado','ok'], offline:['Sem conexão','warn'], paused:['Atenção','warn'], expired:['Sessão expirou','warn'], error:['Erro ao sincronizar','err'] };
+function syChipHtml(){ if(!syConfigured()||sy.status==='off') return ''; const l=SY_LABEL[sy.status]||SY_LABEL.error; return '<button class="sync-chip '+l[1]+'" id="syncChip" onclick="syOpenPanel()" title="Sincronização"><span class="sdot"></span><span class="slabel">'+l[0]+'</span></button>'; }
+function syFooterText(){ const m=syMeta(); if(!syConfigured()||!sy.session) return 'Seus dados ficam salvos automaticamente neste dispositivo/navegador.'; return 'Salvo neste aparelho e sincronizado com a nuvem'+(m.lastSyncAt?' · última sincronização '+syTime(m.lastSyncAt):'')+'.'; }
+function syUpdateChip(){
+  const el=document.getElementById('syncChip');
+  if(el){ const t=document.createElement('div'); t.innerHTML=syChipHtml(); if(t.firstChild) el.replaceWith(t.firstChild); const f=document.querySelector('.footer-note'); if(f) f.textContent=syFooterText(); }
+  else if(syConfigured() && !ui.modal && !ui.confirmBox){ render(); }
+}
+function syStatus(s){ sy.status=s; syUpdateChip(); if(sy.panel==='account') syRenderPanel(); }
+function syToast(msg){ let t=document.getElementById('syToast'); if(!t){ t=document.createElement('div'); t.id='syToast'; t.className='sync-toast'; document.body.appendChild(t); } t.textContent=msg; t.style.opacity='1'; clearTimeout(sy.toastT); sy.toastT=setTimeout(()=>{ t.style.opacity='0'; },4200); }
+
+// ---- tratamento de erros ----
+function syErrKind(e){
+  const msg=String((e&&(e.message||e.error_description))||e||'');
+  if(e&&e.code==='SESSION_EXPIRED') return 'expired';
+  if(typeof navigator!=='undefined' && navigator.onLine===false) return 'network';
+  if((e&&e.name==='AuthRetryableFetchError') || /failed to fetch|networkerror|network request failed|load failed|fetch failed/i.test(msg)) return 'network';
+  if((e&&(e.status===401||e.code==='PGRST301'||e.code==='PGRST303')) || /jwt|token.*expired|not authenticated|invalid.*(token|jwt)|refresh.?token/i.test(msg)) return 'auth';
+  return 'other';
+}
+function syAuthMsg(e){
+  const m=String((e&&e.message)||e||'');
+  if(/invalid login credentials/i.test(m)) return 'E-mail ou senha incorretos.';
+  if(/email not confirmed/i.test(m)) return 'Esse e-mail ainda não foi confirmado. Abra o link que enviamos por e-mail.';
+  if(/rate limit|too many/i.test(m)) return 'Muitas tentativas. Aguarde alguns minutos e tente de novo.';
+  if(/password should be at least|weak/i.test(m)) return 'A senha é fraca ou curta demais. Use pelo menos 8 caracteres.';
+  if(syErrKind(e)==='network') return 'Sem conexão com a internet. Tente de novo quando estiver online.';
+  return 'Não foi possível concluir: '+m;
+}
+function syHandleError(e){
+  console.error('[Cofre sync]', e);
+  const k=syErrKind(e);
+  if(k==='network'){ syStatus('offline'); return; }
+  if(k==='expired'){ sy.ready=false; syStatus('expired'); syOpen('login','Sua sessão expirou. Entre de novo para continuar sincronizando. Os dados deste aparelho continuam preservados.','warn'); return; }
+  sy.lastError=(e&&e.message)||String(e); syStatus('error');
+}
+// executa uma chamada; se o token expirou, tenta renovar a sessão uma vez
+async function syCall(fn){
+  try{ return await fn(); }
+  catch(e){
+    if(syErrKind(e)!=='auth') throw e;
+    let r; try{ r=await sy.client.auth.refreshSession(); }catch(e2){ r={error:e2}; }
+    if(r&&r.data&&r.data.session){ sy.session=r.data.session; return await fn(); }
+    if(r&&r.error&&syErrKind(r.error)==='network') throw r.error;
+    const err=new Error('Sessão expirada'); err.code='SESSION_EXPIRED'; throw err;
+  }
+}
+
+// ---- acesso à nuvem ----
+async function syFetchRemote(){
+  const uid=sy.session.user.id;
+  const r=await sy.client.from(SYNC_CONFIG.table).select('payload,updated_at').eq('user_id',uid).maybeSingle();
+  if(r.error) throw r.error;
+  return r.data||null;
+}
+function syReady(){ sy.ready=true; sy.paused=false; sy.pending=null; syMetaSet({lastSyncAt:new Date().toISOString()}); syStatus('synced'); }
+function syPend(kind,row){ sy.paused=true; sy.ready=false; sy.pending={kind,row}; syStatus('paused'); syOpen(kind==='upload'?'upload':kind==='blocked'?'blocked':'conflict'); }
+
+// aplica na tela/armazenamento local os dados vindos da nuvem (guarda cópia do que existia antes)
+async function syApply(row){
+  sySafetyCopy('antes-de-carregar-da-nuvem');
+  const defPrefs=()=>({order:['chart','categories','categoriesIncome','commitments','projections'],collapsed:{}});
+  state = Object.assign({ bills:[], dashboardPrefs:defPrefs() }, row.payload);
+  if(!state.dashboardPrefs) state.dashboardPrefs = defPrefs();
+  migrateDashboardOrder(); migrateCategoryTypes(); state.bills = migrateBills(state.bills);
+  ui.selectedTx = [];
+  try{ await storageSet('cofre-state', JSON.stringify(state)); }catch(e){ console.error('erro ao salvar localmente', e); syToast('Aviso: não consegui gravar localmente os dados da nuvem.'); }
+  syMetaSet({ userId:sy.session.user.id, baseUpdatedAt:row.updated_at, baseHash:syHash(sySnap()), baseHadData:syHasData(state) });
+  syReady(); render();
+}
+
+// ---- reconciliação inicial (ao entrar / abrir o app já logado) ----
+async function syReconcile(){
+  if(sy.reconciling||!sy.session) return;
+  sy.reconciling=true; syStatus('syncing');
+  try{
+    const uid=sy.session.user.id;
+    const row=await syCall(()=>syFetchRemote());
+    const meta=syMeta();
+    const linked = meta.userId===uid && !!meta.baseUpdatedAt;
+    const localHas=syHasData(state);
+    const localDirty = linked ? meta.baseHash!==syHash(sySnap()) : localHas;
+
+    if(!row){
+      if(!localHas){ syMetaSet({userId:uid,baseUpdatedAt:null,baseHash:syHash(sySnap()),baseHadData:false}); syReady(); }
+      else syPend('upload',null);
+      return;
+    }
+    if(!syValid(row.payload) && !syIsEmptyPayload(row.payload)){
+      sy.paused=true; sy.ready=false; sy.pending=null;
+      sy.lastError='Os dados na nuvem estão num formato inesperado. Nada foi alterado, nem aqui nem na nuvem.';
+      syStatus('error'); syOpen('info',sy.lastError,'warn'); return;
+    }
+    const remoteHas = syValid(row.payload) && syHasData(row.payload);
+    if(!remoteHas){
+      if(!localHas){ syMetaSet({userId:uid,baseUpdatedAt:row.updated_at,baseHash:syHash(sySnap()),baseHadData:false}); syReady(); }
+      else syPend('upload',row);
+      return;
+    }
+    if(!localHas){
+      if(linked && localDirty) syPend('blocked',row);   // pode ter sido uma limpeza proposital: não restaura nem apaga sozinho
+      else await syApply(row);                          // aparelho novo/vazio: apenas carrega, nada é perdido
+      return;
+    }
+    // os dois lados têm dados
+    if(!linked){
+      if(syStable(state)===syStable(row.payload)){ syMetaSet({userId:uid,baseUpdatedAt:row.updated_at,baseHash:syHash(sySnap()),baseHadData:true}); syReady(); }
+      else syPend('first',row);
+      return;
+    }
+    if(row.updated_at===meta.baseUpdatedAt){ syReady(); if(localDirty) syQueuePush(0); return; }
+    if(!localDirty){ await syApply(row); syToast('Dados atualizados a partir da nuvem.'); return; }
+    syPend('diverged',row);
+  }catch(e){ syHandleError(e); }
+  finally{ sy.reconciling=false; }
+}
+
+// ---- envio (push) com concorrência otimista via updated_at ----
+function syQueuePush(delay){ clearTimeout(sy.pushTimer); sy.pushTimer=setTimeout(()=>{ syPush(false); }, delay==null?1500:delay); }
+function syAfterSave(){ if(!sy.session||!sy.ready||sy.paused) return; if(!syDirty()) return; syQueuePush(); }
+async function syPush(force){
+  if(sy.pushing){ sy.pushAgain=true; return; }
+  if(!sy.client||!sy.session||!sy.ready||sy.paused) return;
+  const uid=sy.session.user.id, meta=syMeta(), snap=sySnap(), hash=syHash(snap);
+  if(!force && meta.userId===uid && meta.baseHash===hash){ if(sy.status!=='synced') syStatus('synced'); return; }
+  if(!force && !syHasData(state)){
+    if(meta.baseHadData){ syPend('blocked',null); return; }           // PROTEÇÃO: nunca enviar estado vazio por cima de dados
+    syMetaSet({userId:uid,baseHash:hash}); if(sy.status!=='synced') syStatus('synced'); return;   // nada de valor para enviar
+  }
+  sy.pushing=true; syStatus('syncing');
+  try{
+    const now=new Date().toISOString(), payload=JSON.parse(snap), table=SYNC_CONFIG.table;
+    const r=await syCall(async()=>{
+      let q;
+      if(!meta.baseUpdatedAt) q=await sy.client.from(table).insert({user_id:uid,payload,updated_at:now}).select('updated_at').single();
+      else q=await sy.client.from(table).update({payload,updated_at:now}).eq('user_id',uid).eq('updated_at',meta.baseUpdatedAt).select('updated_at');
+      if(q.error && q.error.code!=='23505') throw q.error;
+      return q;
+    });
+    let ts=null;
+    if(!r.error){ ts = Array.isArray(r.data) ? (r.data[0]&&r.data[0].updated_at) : (r.data&&r.data.updated_at); }
+    if(!ts){ await syConflictFromPush(); return; }   // 0 linhas atualizadas (ou chave duplicada) = outro aparelho mudou a nuvem
+    syMetaSet({userId:uid,baseUpdatedAt:ts,baseHash:hash,baseHadData:syHasData(payload),lastSyncAt:now});
+    syStatus('synced');
+  }catch(e){ syHandleError(e); }
+  finally{
+    sy.pushing=false;
+    if(sy.pushAgain){ sy.pushAgain=false; syQueuePush(300); }
+    else if(sy.ready&&!sy.paused&&sy.session&&sy.status==='synced'&&syDirty()) syQueuePush(300);
+  }
+}
+async function syConflictFromPush(){
+  const row=await syCall(()=>syFetchRemote());
+  if(!row){ syMetaSet({baseUpdatedAt:null}); syPend('upload',null); return; }
+  syPend('diverged',row);
+}
+
+// ---- verificação periódica: busca mudanças feitas em outros aparelhos ----
+async function syCheckRemote(force){
+  if(!sy.client||!sy.session||!sy.ready||sy.paused||sy.pushing||sy.checking) return;
+  if(!force && (ui.modal||ui.confirmBox||sy.panel)) return;     // nunca troca os dados enquanto você edita algo
+  sy.checking=true;
+  try{
+    const uid=sy.session.user.id;
+    const r=await syCall(async()=>{ const q=await sy.client.from(SYNC_CONFIG.table).select('updated_at').eq('user_id',uid).maybeSingle(); if(q.error) throw q.error; return q; });
+    const meta=syMeta();
+    if(r.data && r.data.updated_at!==meta.baseUpdatedAt){
+      const row=await syCall(()=>syFetchRemote());
+      if(!row) return;
+      if(!syValid(row.payload)){ sy.lastError='A nuvem tem dados em formato inesperado; nada foi alterado.'; syStatus('error'); return; }
+      if(!force && (ui.modal||ui.confirmBox||sy.panel)) return;
+      if(!syDirty()){ await syApply(row); syToast('Dados atualizados a partir de outro aparelho.'); }
+      else syPend('diverged',row);
+      return;
+    }
+    if(sy.status!=='synced' && !syDirty()) syStatus('synced');
+  }catch(e){ syHandleError(e); }
+  finally{ sy.checking=false; }
+}
+function syTick(){
+  if(!sy.client||!sy.session||sy.paused||sy.reconciling||sy.pushing) return;
+  if(!sy.ready){ syReconcile(); return; }
+  if(syDirty()) syPush(false); else syCheckRemote(false);
+}
+
+// ---- decisões do usuário (conflito / primeiro envio / proteção contra vazio) ----
+async function syChooseCloud(){
+  const p=sy.pending; if(!p||!p.row) return;
+  if(!syValid(p.row.payload)){ syOpen('info','Os dados da nuvem estão num formato inesperado; não é seguro carregá-los.','warn'); return; }
+  sySafetyCopy('antes-de-escolher-a-nuvem');
+  await syApply(p.row); syClose(); syToast('Pronto: este aparelho agora usa os dados da nuvem.');
+}
+async function syChooseLocal(){
+  const p=sy.pending; if(!p) return;
+  if(!confirm('Isto vai SUBSTITUIR os dados da nuvem pelos deste aparelho. Os outros aparelhos passarão a ver estes dados. Uma cópia do que estava na nuvem fica guardada aqui. Continuar?')) return;
+  if(p.row && syValid(p.row.payload)) sySafetyCopy('nuvem-antes-de-substituir', p.row.payload);
+  syMetaSet({ userId:sy.session.user.id, baseUpdatedAt:p.row?p.row.updated_at:null, baseHash:'x', baseHadData:true });
+  sy.ready=true; sy.paused=false; sy.pending=null; syClose();
+  await syPush(true);
+}
+function syLater(){ syClose(); }
+async function syNow(){
+  if(!sy.session){ syOpen('login'); return; }
+  if(sy.pending){ syOpenPanel(); return; }
+  if(sy.pushing||sy.reconciling) return;
+  if(!sy.ready){ await syReconcile(); }
+  else { await syPush(false); await syCheckRemote(true); }
+  if(sy.panel==='account') syRenderPanel();
+}
+
+// ---- autenticação ----
+function syVal(id){ const el=document.getElementById(id); return el?el.value:''; }
+function syLockPanel(){ const L=document.getElementById('syncLayer'); if(L&&L.querySelectorAll) L.querySelectorAll('button').forEach(b=>{ b.disabled=true; }); }
+async function syLogin(ev){
+  if(ev) ev.preventDefault();
+  if(sy.busy||!sy.client) return;
+  const email=syVal('syEmail').trim(), password=syVal('syPass'); sy.emailDraft=email;
+  if(!email||!password){ syOpen('login','Digite e-mail e senha.','warn'); return; }
+  sy.busy=true; syLockPanel();
+  try{
+    const r=await sy.client.auth.signInWithPassword({email,password});
+    if(r.error) throw r.error;
+    sy.session=r.data.session; sy.paused=false; sy.pending=null; sy.ready=false; sy.busy=false;
+    syClose(); syReconcile();
+  }catch(e){ sy.busy=false; syOpen('login',syAuthMsg(e),'warn'); }
+}
+async function sySignUp(){
+  if(sy.busy||!sy.client) return;
+  const email=syVal('syEmail').trim(), password=syVal('syPass'); sy.emailDraft=email;
+  if(!email||password.length<8){ syOpen('login','Para criar a conta, digite o e-mail e uma senha com pelo menos 8 caracteres.','warn'); return; }
+  sy.busy=true; syLockPanel();
+  try{
+    const r=await sy.client.auth.signUp({email,password,options:{emailRedirectTo:location.href.split('#')[0].split('?')[0]}});
+    if(r.error) throw r.error;
+    sy.busy=false;
+    if(r.data&&r.data.user&&Array.isArray(r.data.user.identities)&&r.data.user.identities.length===0){ syOpen('login','Esse e-mail já tem conta. Use "Entrar".','warn'); return; }
+    if(r.data&&r.data.session){ sy.session=r.data.session; sy.paused=false; sy.pending=null; sy.ready=false; syClose(); syReconcile(); }
+    else syOpen('login','Conta criada. Enviamos um e-mail de confirmação: abra o link e depois volte aqui para entrar.','good');
+  }catch(e){ sy.busy=false; syOpen('login',syAuthMsg(e),'warn'); }
+}
+async function syForgot(){
+  const email=syVal('syEmail').trim(); sy.emailDraft=email;
+  if(!email){ syOpen('login','Digite seu e-mail acima e toque em "Esqueci a senha" de novo.','warn'); return; }
+  try{
+    const r=await sy.client.auth.resetPasswordForEmail(email,{redirectTo:location.href.split('#')[0].split('?')[0]});
+    if(r.error) throw r.error;
+    syOpen('login','Se esse e-mail tiver conta, você receberá um link para criar uma nova senha.','good');
+  }catch(e){ syOpen('login',syAuthMsg(e),'warn'); }
+}
+async function syNewPassword(ev){
+  if(ev) ev.preventDefault();
+  const p=syVal('syNewPass');
+  if(p.length<8){ syOpen('recovery','Use pelo menos 8 caracteres.','warn'); return; }
+  try{
+    const r=await sy.client.auth.updateUser({password:p});
+    if(r.error) throw r.error;
+    syClose(); syToast('Senha alterada.'); if(!sy.ready&&sy.session) syReconcile();
+  }catch(e){ syOpen('recovery',syAuthMsg(e),'warn'); }
+}
+async function syLogout(){
+  if(!confirm('Sair desta conta? Os dados continuam salvos neste aparelho, mas deixam de sincronizar até você entrar de novo.')) return;
+  try{ await sy.client.auth.signOut({scope:'local'}); }catch(e){}
+  clearTimeout(sy.pushTimer); sy.session=null; sy.ready=false; sy.pending=null; sy.paused=false;
+  syStatus('signedout'); syClose();
+}
+function syOnAuth(event,session){
+  sy.session=session||null;
+  if(event==='SIGNED_OUT'){ sy.ready=false; sy.pending=null; sy.paused=false; if(sy.status!=='expired') syStatus('signedout'); return; }
+  if(event==='PASSWORD_RECOVERY'){ setTimeout(()=>syOpen('recovery'),0); return; }
+  if((event==='SIGNED_IN'||event==='INITIAL_SESSION') && session && !sy.ready && !sy.reconciling && !sy.paused) setTimeout(()=>syReconcile(),0);
+}
+
+// ---- painel (camada própria, fora do #app: render() não apaga o que você digita) ----
+function syLayer(){ let el=document.getElementById('syncLayer'); if(!el){ el=document.createElement('div'); el.id='syncLayer'; document.body.appendChild(el); } return el; }
+function syOpen(view,msg,type){ sy.panel=view; sy.panelMsg=msg||''; sy.panelType=type||''; syRenderPanel(); }
+function syClose(){ sy.panel=null; sy.panelMsg=''; syRenderPanel(); }
+function syOpenPanel(){
+  if(sy.pending){ const k=sy.pending.kind; syOpen(k==='upload'?'upload':k==='blocked'?'blocked':'conflict'); }
+  else if(!sy.client){ syOpen('info', sy.lastError||'A sincronização não está disponível agora. Recarregue a página quando estiver online.','warn'); }
+  else if(!sy.session||sy.status==='expired') syOpen('login');
+  else syOpen('account');
+}
+function syRenderPanel(){
+  const L=syLayer(), v=sy.panel;
+  if(!v){ L.innerHTML=''; return; }
+  const msg = sy.panelMsg ? '<div class="insight '+(sy.panelType==='warn'?'warn':sy.panelType==='good'?'good':'')+'">'+syEsc(sy.panelMsg)+'</div>' : '';
+  const wrap=(title,body)=>'<div class="modal-bg" style="z-index:200"><div class="modal sync-modal"><h2>'+title+'</h2>'+msg+body+'</div></div>';
+  const m=syMeta(), p=sy.pending;
+  if(v==='login'){
+    L.innerHTML=wrap('Entrar para sincronizar',
+      '<p>Entre com a sua conta para manter o Cofre igual em todos os seus aparelhos. Nada que está salvo neste aparelho será apagado.</p>'
+     +'<form onsubmit="syLogin(event)"><div class="field"><label>E-mail</label><input type="email" id="syEmail" autocomplete="username" autocapitalize="none" required value="'+syEsc(sy.emailDraft)+'"></div>'
+     +'<div class="field"><label>Senha</label><input type="password" id="syPass" autocomplete="current-password" required></div>'
+     +'<div class="sy-row"><button class="btn btn-primary" type="submit">Entrar</button><button class="btn btn-ghost" type="button" onclick="sySignUp()">Criar conta</button></div></form>'
+     +'<div class="sy-links"><a href="#" onclick="syForgot();return false">Esqueci a senha</a> · <a href="#" onclick="syClose();return false">Usar sem sincronizar</a></div>'
+     +'<p class="sy-small" style="margin-top:12px">Para ver os mesmos dados em dois aparelhos, entre com o mesmo e-mail e senha nos dois.</p>');
+  } else if(v==='recovery'){
+    L.innerHTML=wrap('Nova senha','<form onsubmit="syNewPassword(event)"><div class="field"><label>Nova senha (mín. 8 caracteres)</label><input type="password" id="syNewPass" autocomplete="new-password" required></div><div class="sy-row"><button class="btn btn-primary" type="submit">Salvar senha</button><button class="btn btn-ghost" type="button" onclick="syClose()">Cancelar</button></div></form>');
+  } else if(v==='account'){
+    const email=sy.session&&sy.session.user?sy.session.user.email:'';
+    const lbl=(SY_LABEL[sy.status]||SY_LABEL.error)[0];
+    const safes=sySafetyList();
+    const safeHtml = safes.length ? '<h3 style="margin-top:16px">Cópias de segurança neste aparelho</h3>'+safes.map(s=>{ let d=''; try{ d=syDescribe(JSON.parse(s.data)); }catch(e){} return '<div class="commit-row" style="gap:10px;font-family:Inter"><span style="font-size:12px">'+syTime(s.ts)+'<br><small style="color:var(--muted)">'+syEsc(s.label)+' · '+syEsc(d)+'</small></span><button class="chip" onclick="syDownloadSafety(\''+s.key+'\')">Baixar</button></div>'; }).join('') : '';
+    L.innerHTML=wrap('Sincronização',
+      '<p>Conta: <b>'+syEsc(email)+'</b><br>Estado: <b>'+syEsc(lbl)+'</b>'+(m.lastSyncAt?'<br>Última sincronização: '+syTime(m.lastSyncAt):'')+(sy.status==='error'&&sy.lastError?'<br><span style="color:var(--red)">'+syEsc(sy.lastError)+'</span>':'')+'</p>'
+     +'<div class="sy-stack"><button class="btn btn-primary" onclick="syNow()">Sincronizar agora</button><button class="btn btn-ghost" onclick="exportBackup()">💾 Baixar backup (JSON)</button><button class="btn btn-ghost" onclick="syLogout()">Sair desta conta</button><button class="btn btn-ghost" onclick="syClose()">Fechar</button></div>'+safeHtml);
+  } else if(v==='upload'){
+    L.innerHTML=wrap('Enviar os dados para a nuvem?',
+      '<p>Este aparelho tem dados e a nuvem ainda está vazia:</p><div class="sy-cmp"><div><b>Este aparelho</b><br>'+syEsc(syDescribe(state))+'</div><div><b>Nuvem</b><br>vazia</div></div>'
+     +'<p>Se você enviar, os outros aparelhos que entrarem nesta conta receberão estes dados. Nada será apagado deste aparelho.</p>'
+     +'<div class="sy-stack"><button class="btn btn-primary" onclick="syChooseLocal()">Enviar para a nuvem</button><button class="btn btn-ghost" onclick="syDownloadLocal()">Baixar uma cópia antes (JSON)</button><button class="btn btn-ghost" onclick="syLater()">Agora não</button></div>');
+  } else if(v==='blocked'){
+    L.innerHTML=wrap('Proteção contra dados vazios',
+      '<p>Este aparelho ficou <b>sem lançamentos, contas ou cartões</b>, mas a nuvem tem dados. Para sua proteção, <b>não enviei nada</b>: os dados da nuvem continuam intactos.</p>'
+     +(p&&p.row?'<div class="sy-cmp"><div><b>Este aparelho</b><br>'+syEsc(syDescribe(state))+'</div><div><b>Nuvem</b><br>'+syEsc(syDescribe(p.row.payload))+'<br>atualizada em '+syTime(p.row.updated_at)+'</div></div>':'')
+     +'<div class="sy-stack"><button class="btn btn-primary" onclick="syBlockedRestore()">Restaurar os dados da nuvem aqui</button><button class="btn btn-danger" onclick="syBlockedForce()">Apagar também na nuvem (esvaziar tudo)</button><button class="btn btn-ghost" onclick="syLater()">Decidir depois</button></div>');
+  } else if(v==='conflict' && p && p.row){
+    const first=p.kind==='first';
+    L.innerHTML=wrap(first?'Dados diferentes encontrados':'Mudanças nos dois lugares',
+      '<p>'+(first?'Este aparelho e a nuvem já têm dados diferentes.':'Os dados mudaram aqui e em outro aparelho desde a última sincronização.')+' <b>Nada foi sobrescrito ainda.</b> Escolha qual versão manter:</p>'
+     +'<div class="sy-cmp"><div><b>Este aparelho</b><br>'+syEsc(syDescribe(state))+'</div><div><b>Nuvem</b><br>'+syEsc(syDescribe(p.row.payload))+'<br>atualizada em '+syTime(p.row.updated_at)+'</div></div>'
+     +'<div class="sy-stack"><button class="btn btn-primary" onclick="syChooseCloud()">Usar os dados da nuvem</button><button class="btn btn-ghost" onclick="syChooseLocal()">Usar os dados deste aparelho (substitui a nuvem)</button>'
+     +'<button class="btn btn-ghost" onclick="syDownloadLocal()">Baixar cópia deste aparelho</button><button class="btn btn-ghost" onclick="syDownloadCloud()">Baixar cópia da nuvem</button><button class="btn btn-ghost" onclick="syLater()">Decidir depois</button></div>'
+     +'<p class="sy-small" style="margin-top:10px">A versão que for substituída fica guardada como cópia de segurança neste aparelho. Enquanto você não decidir, o Cofre continua funcionando e salvando só aqui.</p>');
+  } else {
+    L.innerHTML=wrap('Sincronização','<p>'+syEsc(sy.panelMsg||sy.lastError||'')+'</p><div class="sy-row"><button class="btn btn-ghost" onclick="syClose()">Fechar</button></div>').replace(msg,'');
+  }
+}
+async function syBlockedRestore(){
+  try{ const row=await syCall(()=>syFetchRemote()); if(!row||!syValid(row.payload)){ syOpen('info','Não consegui ler os dados da nuvem agora.','warn'); return; } sy.pending={kind:'blocked',row}; await syApply(row); syClose(); syToast('Dados da nuvem restaurados neste aparelho.'); }
+  catch(e){ syClose(); syHandleError(e); }
+}
+async function syBlockedForce(){
+  if(!confirm('Isto vai ESVAZIAR também os dados da nuvem (e dos outros aparelhos). Tem certeza?')) return;
+  try{
+    const row=await syCall(()=>syFetchRemote());
+    if(row&&syValid(row.payload)) sySafetyCopy('nuvem-antes-de-esvaziar', row.payload);
+    syMetaSet({ userId:sy.session.user.id, baseUpdatedAt:row?row.updated_at:null, baseHash:'x' });
+    sy.ready=true; sy.paused=false; sy.pending=null; syClose(); await syPush(true);
+  }catch(e){ syHandleError(e); }
+}
+
+// ---- inicialização ----
+async function syInit(){
+  if(!syConfigured()) return;                                  // sem configuração: Cofre 100% local, nada muda
+  if(!(window.supabase&&window.supabase.createClient)){ sy.lastError='A biblioteca de sincronização não carregou (talvez sem internet). Recarregue a página quando estiver online. O Cofre continua funcionando neste aparelho.'; syStatus('offline'); return; }
+  sy.client=window.supabase.createClient(SYNC_CONFIG.url,SYNC_CONFIG.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  sy.client.auth.onAuthStateChange((event,session)=>{ try{ syOnAuth(event,session); }catch(e){ console.error(e); } });
+  syStatus('syncing');
+  let session=null;
+  try{ const r=await sy.client.auth.getSession(); session=r&&r.data?r.data.session:null; }
+  catch(e){ syHandleError(e); }
+  if(session){ sy.session=session; syReconcile(); }
+  else if(sy.status!=='offline'){ syStatus('signedout'); if(!sy.gateShown){ sy.gateShown=true; syOpen('login'); } }
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible') syTick();
+    else if(sy.session&&sy.ready&&!sy.paused&&syDirty()){ clearTimeout(sy.pushTimer); syPush(false); }
+  });
+  window.addEventListener('online',()=>{ syTick(); });
+  window.addEventListener('offline',()=>{ if(sy.session) syStatus('offline'); });
+  setInterval(syTick,45000);
+}
+
+loadState().then(()=>{ try{ syInit(); }catch(e){ console.error(e); } });
 </script>
 </body>
 </html>
