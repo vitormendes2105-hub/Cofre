@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261012-2">
+<meta name="cofre-version" content="20261012-3">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -265,6 +265,15 @@
     .card tr>td:nth-child(1){grid-area:chk;} .card tr>td:nth-child(2){grid-area:date;font-size:12px;color:var(--muted);}
     .card tr>td:nth-child(3){grid-area:desc;font-weight:600;word-break:break-word;} .card tr>td:nth-child(4){grid-area:cat;}
     .card tr>td:nth-child(5){grid-area:amt;text-align:right;font-weight:700;} .card tr>td:nth-child(6){grid-area:act;justify-self:end;}
+  }
+  /* ===== Lançamentos em cartões também no iPad e em janelas médias (só a tabela de lançamentos) ===== */
+  @media (min-width:701px) and (max-width:1100px){
+    .card table.txtable,.card table.txtable tbody{display:block;} .card table.txtable thead{display:none;}
+    .card table.txtable tr{display:grid;grid-template-columns:30px auto 1fr auto;grid-template-areas:"chk desc desc amt" "chk date cat act";gap:4px 14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
+    .card table.txtable td{border:none;padding:0;}
+    .card table.txtable tr>td:nth-child(1){grid-area:chk;} .card table.txtable tr>td:nth-child(2){grid-area:date;font-size:12px;color:var(--muted);}
+    .card table.txtable tr>td:nth-child(3){grid-area:desc;font-weight:600;word-break:break-word;} .card table.txtable tr>td:nth-child(4){grid-area:cat;}
+    .card table.txtable tr>td:nth-child(5){grid-area:amt;text-align:right;font-weight:700;} .card table.txtable tr>td:nth-child(6){grid-area:act;justify-self:end;}
   }
 
   /* ===== Sincronização (Supabase) ===== */
@@ -1781,9 +1790,25 @@ function clearTxFilter(){
   ui.txFilter = { category:'all', type:'all', search:'' };
   render();
 }
+// ===== Ordem da lista de lançamentos =====
+// Padrão: data mais recente no topo. Dentro do mesmo dia, o que foi cadastrado por último aparece primeiro.
+// "Últimos adicionados" ordena pela ordem de cadastro (um lançamento antigo cadastrado agora aparece no topo).
+const TX_SORTS=[['date_desc','Data: mais recente primeiro'],['date_asc','Data: mais antiga primeiro'],['added_desc','Últimos adicionados primeiro'],['amount_desc','Maior valor primeiro'],['amount_asc','Menor valor primeiro']];
+function txSortMode(){ const m=(state.settings||{}).txSort; return TX_SORTS.some(s=>s[0]===m)?m:'date_desc'; }
+function sortTx(list){
+  const idx=new Map(state.transactions.map((t,i)=>[t.id,i])), pos=t=>idx.has(t.id)?idx.get(t.id):0;
+  const byDateDesc=(a,b)=>b.date.localeCompare(a.date)||pos(b)-pos(a);
+  const m=txSortMode(), out=list.slice();
+  if(m==='date_asc') out.sort((a,b)=>a.date.localeCompare(b.date)||pos(a)-pos(b));
+  else if(m==='added_desc') out.sort((a,b)=>pos(b)-pos(a));
+  else if(m==='amount_desc') out.sort((a,b)=>b.amount-a.amount||byDateDesc(a,b));
+  else if(m==='amount_asc') out.sort((a,b)=>a.amount-b.amount||byDateDesc(a,b));
+  else out.sort(byDateDesc);
+  return out;
+}
 function transactionsView(){
   const allTxs = txInMonth();
-  const txs = filteredTxInMonth().sort((a,b)=>a.date.localeCompare(b.date));
+  const txs = sortTx(filteredTxInMonth());
   const allSelected = txs.length>0 && txs.every(t=>ui.selectedTx.includes(t.id));
   const filterActive = ui.txFilter.category!=='all' || ui.txFilter.type!=='all' || ui.txFilter.search;
   const categoriesUsed = [...new Map(allTxs.map(t=>[t.type+'::'+t.category, {key:t.type+'::'+t.category, name:t.category, type:t.type}])).values()].sort((a,b)=>a.name.localeCompare(b.name));
@@ -1805,6 +1830,9 @@ function transactionsView(){
           <option value="all" ${ui.txFilter.category==='all'?'selected':''}>Todas as categorias</option>
           ${categoriesUsed.map(c=>`<option value="${c.key}" ${ui.txFilter.category===c.key?'selected':''}>${c.type==='income'?'↑':'↓'} ${c.name}</option>`).join('')}
         </select>
+        <select onchange="setSetting('txSort',this.value)" style="width:auto;" title="Ordem da lista" aria-label="Ordem da lista">
+          ${TX_SORTS.map(s=>`<option value="${s[0]}" ${txSortMode()===s[0]?'selected':''}>${s[1]}</option>`).join('')}
+        </select>
         ${filterActive ? `<button class="btn btn-ghost" onclick="clearTxFilter()">Limpar filtro</button>` : ''}
       </div>
       ${txs.length && ui.selectedTx.length ? (()=>{
@@ -1821,7 +1849,7 @@ function transactionsView(){
           <button class="btn btn-danger" onclick="deleteSelectedTx()">${icon('trash')} Excluir</button>
         </div>`;
       })() : ''}
-      ${txs.length ? `<table>
+      ${txs.length ? `<table class="txtable">
         <thead><tr>
           <th><input type="checkbox" ${allSelected?'checked':''} onchange="toggleSelectAllTx(this.checked)" title="Selecionar todos os visíveis"/></th>
           <th>Data</th><th>Descrição</th><th>Categoria</th><th style="text-align:right">Valor</th><th></th>
@@ -2698,7 +2726,7 @@ function syMeta(){ try{ return JSON.parse(localStorage.getItem(SY_META_KEY)||'nu
 function syMetaSet(patch){ const m=Object.assign(syMeta(),patch); try{ localStorage.setItem(SY_META_KEY, JSON.stringify(m)); }catch(e){} return m; }
 function syHash(str){ let h1=0xdeadbeef,h2=0x41c6ce57; for(let i=0;i<str.length;i++){ const ch=str.charCodeAt(i); h1=Math.imul(h1^ch,2654435761); h2=Math.imul(h2^ch,1597334677); } h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909); h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909); return (4294967296*(2097151&h2)+(h1>>>0)).toString(36); }
 // preferências da barra de abas (posição/recolhida) são de cada aparelho: não vão para a nuvem
-const SY_LOCAL_SETTINGS=['navPos','navCollapsed','navCollapsible'];
+const SY_LOCAL_SETTINGS=['navPos','navCollapsed','navCollapsible','txSort'];
 function syState(){ const s=Object.assign({},state); if(s.settings){ s.settings=Object.assign({},s.settings); SY_LOCAL_SETTINGS.forEach(k=>{ delete s.settings[k]; }); } return s; }
 function sySnap(){ return JSON.stringify(syState()); }
 function syStable(o){ if(Array.isArray(o)) return '['+o.map(syStable).join(',')+']'; if(o&&typeof o==='object') return '{'+Object.keys(o).filter(k=>o[k]!==undefined).sort().map(k=>JSON.stringify(k)+':'+syStable(o[k])).join(',')+'}'; return JSON.stringify(o); }
