@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="cofre-version" content="20261012-2">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -279,6 +280,15 @@
   .sy-small{font-size:12px;color:var(--muted);}
   .sync-toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;z-index:300;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center;}
   @media(max-width:420px){ .sync-chip{padding:7px 10px;margin-right:6px;} .sync-chip.ok .slabel{display:none;} .sy-cmp{grid-template-columns:1fr;} }
+  /* ===== Telas bem estreitas (iPhone pequeno, zoom): cabeçalho e barra de abas não estouram ===== */
+  @media(max-width:360px){
+    header{padding-left:8px;padding-right:6px;}
+    .hdr-cta{padding:9px 12px;font-size:12.5px;}
+    .sync-chip{padding:6px 8px;margin-right:4px;font-size:11px;}
+    #mainnav{padding:5px;gap:1px;}
+    #mainnav button:not(.navgrip):not(.navtoggle){width:38px;height:48px;}
+    .navgrip,.navtoggle{width:24px;}
+  }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 </head>
@@ -3087,6 +3097,36 @@ async function syInit(){
   window.addEventListener('offline',()=>{ if(sy.session) syStatus('offline'); });
   setInterval(syTick,45000);
 }
+
+// ===== Atualização automática: ao abrir (ou voltar ao app), confere se existe versão nova e recarrega =====
+// Só roda quando o app está num endereço http(s). Não recarrega se você está editando algo.
+(function(){
+  if(!/^https?:$/.test(location.protocol)) return;
+  const metaV=d=>{ const m=d.querySelector('meta[name="cofre-version"]'); return m?m.content:null; };
+  const myV=metaV(document);
+  let checking=false;
+  async function checkUpdate(){
+    if(checking||!myV) return; checking=true;
+    try{
+      const base=location.origin+location.pathname;
+      const r=await fetch(base+'?cv='+Date.now(),{cache:'no-store'});
+      if(!r.ok) return;
+      const doc=new DOMParser().parseFromString(await r.text(),'text/html');
+      const newV=metaV(doc);
+      if(!newV||newV===myV) return;
+      let tried=null; try{ tried=sessionStorage.getItem('cofre-upd-tried'); }catch(e){}
+      if(tried===newV) return;                                        // já tentou esta versão nesta sessão: evita laço de recarga
+      const busy=(window.ui&&(window.ui.modal||window.ui.confirmBox))||(typeof sy!=='undefined'&&(sy.panel||sy.pushing||(sy.session&&sy.ready&&!sy.paused&&syDirty())));
+      if(busy){ setTimeout(()=>{ checking=false; checkUpdate(); },15000); return; }
+      try{ sessionStorage.setItem('cofre-upd-tried',newV); }catch(e){}
+      location.replace(base+'?v='+encodeURIComponent(newV));
+    }catch(e){ /* sem internet: segue com a versão atual */ }
+    finally{ checking=false; }
+  }
+  setTimeout(checkUpdate,2500);
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') checkUpdate(); });
+  setInterval(checkUpdate,300000);
+})();
 
 loadState().then(()=>{ try{ syInit(); }catch(e){ console.error(e); } });
 </script>
