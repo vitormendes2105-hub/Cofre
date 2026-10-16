@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261015-1">
+<meta name="cofre-version" content="20261015-2">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -1543,7 +1543,8 @@ function wgCycle(g,today){
   for(let k=-2;k<=2;k++){ const a=wgAuto(t.getFullYear(),t.getMonth()+k,S); st.push({auto:a,eff:o[a]||a}); }
   st.sort((x,y)=>x.eff.localeCompare(y.eff));
   let i=0; st.forEach((s,k)=>{ if(s.eff<=today) i=k; });
-  return {start:st[i].eff,end:wgAdd(st[i+1].eff,-1),auto:st[i].auto};
+  const nat=wgAdd(st[i+1].eff,-1), eo=(g.endOverride||{})[st[i].auto], end=(eo&&eo>=today&&eo>=st[i].eff)?eo:nat;
+  return {start:st[i].eff,end:end,nat:nat,auto:st[i].auto};
 }
 function wgSpent(cat,from,to){
   return state.transactions.filter(t=>t.type==='expense'&&t.category===cat&&t.date>=from&&t.date<=to&&!(t.linkedType==='bill'&&linkedToBudget(t.linkedBillId,cat))).reduce((a,t)=>a+t.amount,0);
@@ -1576,32 +1577,38 @@ function wgBlock(b){
     <div class="wg-bar"><i style="width:${pc}%"></i></div>
     <div class="gsub">Gastou ${fmt(w.spent)} de ${fmt(w.allow)}${parts}${over?'. Isso desconta da próxima semana.':''}</div>
     <div class="wg-r"><span>Ritmo ajustado</span><b>${fmt(p.ritmo)}/semana</b></div>${nxt}
-    <div class="wg-r"><span>Ciclo ${wgBR(p.start)} a ${wgBR(p.end)}</span><b>${fmt(p.spentTot)} de ${fmt(p.amount)} · semana ${p.cur+1} de ${p.N}</b></div>
+    <div class="wg-r"><span>Período ${wgBR(p.start)} a ${wgBR(p.end)}</span><b>${fmt(p.spentTot)} de ${fmt(p.amount)} · semana ${p.cur+1} de ${p.N}</b></div>
     <button class="obc-l" data-c="${c}" onclick="wgEdit(this.dataset.c)">Ajustar meta</button></div>`;
 }
 function wgEdit(cat){
   const gs=wgGoals(), g=gs[cat]||{}, today=todayISO(), labS='Somar na semana seguinte', labR='Reajustar nas semanas que faltam';
-  const orig=wgCycle(g,today).start;
+  const isNew=!g.on, cy=wgCycle(g,today), mon=wgMon(today), defStart=(isNew&&mon>cy.start)?mon:cy.start;
   openForm('Meta semanal: '+cat,[
-    {id:'amount',label:'Valor para o ciclo inteiro (R$)',kind:'money',value:g.amount?String(g.amount).replace('.',','):'',placeholder:'500,00'},
-    {id:'day',label:'O ciclo começa todo dia (1 a 31)',kind:'number',value:g.startDay||8},
-    {id:'start',label:'Este ciclo começa em',kind:'date',value:orig},
-    {id:'carry',label:'Se sobrar dinheiro na semana',kind:'select',options:[labS,labR],value:g.carry==='reajusta'?labR:labS}
+    {id:'amount',label:'Quanto você tem para gastar nesse período (R$)',kind:'money',value:g.amount?String(g.amount).replace('.',','):'',placeholder:'500,00'},
+    {id:'start',label:'Contar os gastos a partir de',kind:'date',value:defStart},
+    {id:'end',label:'Até (último dia do período)',kind:'date',value:cy.end},
+    {id:'carry',label:'Se sobrar dinheiro na semana',kind:'select',options:[labS,labR],value:g.carry==='reajusta'?labR:labS},
+    {id:'day',label:'Nos próximos ciclos, começar todo dia (1 a 31)',kind:'number',value:g.startDay||8}
   ],v=>{
     const amount=parseMoney(v.amount), day=Math.round(Number(v.day));
-    if(!(amount>0)) return 'Digite o valor do ciclo, maior que zero.';
+    if(!(amount>0)) return 'Digite quanto você tem para gastar, maior que zero.';
     if(!(day>=1&&day<=31)) return 'O dia do ciclo vai de 1 a 31.';
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(v.start||'')) return 'Escolha a data de início deste ciclo.';
-    const oldDay=Number(g.startDay)||8, ov=(day===oldDay)?Object.assign({},g.startOverride||{}):{};
-    if(v.start!==orig){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(v.start||'')) return 'Escolha a data em que a contagem começa.';
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(v.end||'')) return 'Escolha o último dia do período.';
+    if(v.end<v.start) return 'O último dia precisa ser depois do primeiro.';
+    if(v.end<today) return 'O último dia não pode ser antes de hoje.';
+    const same=(day===(Number(g.startDay)||8)), ov=same?Object.assign({},g.startOverride||{}):{}, eo=same?Object.assign({},g.endOverride||{}):{};
+    if(v.start!==cy.start){
       const d=wgDate(v.start); let best=null;
       for(let k=-1;k<=1;k++){ const a=wgAuto(d.getFullYear(),d.getMonth()+k,day), dist=Math.abs(wgDate(a)-d); if(!best||dist<best.dist) best={a,dist}; }
       if(v.start===best.a) delete ov[best.a]; else ov[best.a]=v.start;
     }
-    gs[cat]={on:true,amount:amount,startDay:day,startOverride:ov,carry:v.carry===labR?'reajusta':'soma'};
+    const c2=wgCycle({startDay:day,startOverride:ov},today);
+    if(v.end!==c2.nat) eo[c2.auto]=v.end; else delete eo[c2.auto];
+    gs[cat]={on:true,amount:amount,startDay:day,startOverride:ov,endOverride:eo,carry:v.carry===labR?'reajusta':'soma'};
     saveState();
   },'Salvar','');
-  ui.modal.extra=`<div class="gsub" style="line-height:1.5"><b>Como funciona.</b> O ciclo vai do dia em que começa até a véspera do próximo (ex.: dia 8 ao dia 7). O valor é dividido pelas semanas, de segunda a domingo, e toda semana que toca o ciclo conta como inteira. Só contam os gastos desta categoria. Entradas de dinheiro não mexem na meta. Se passar da meta, o excesso sai da semana seguinte. Se sobrar, você escolhe: somar na semana seguinte, ou reajustar o que falta dividindo a sobra entre as próximas semanas. Para um mês diferente, mude a data de início deste ciclo.</div>${g.on?`<button class="btn btn-danger" style="margin-top:12px" onclick="closeModal();wgOff('${esc(cat).replace(/'/g,"\\'")}')">Desligar meta semanal</button>`:''}`;
+  ui.modal.extra=`<div class="gsub" style="line-height:1.5"><b>Como funciona.</b> Você diz quanto tem para gastar e em qual período: o app conta só os gastos desta categoria entre as duas datas e divide o valor pelas semanas (segunda a domingo). Toda semana que toca o período conta como inteira. ${isNew?'As datas já vêm preenchidas com a segunda-feira desta semana até o fim do ciclo. Mude se quiser. ':''}Entradas de dinheiro não mexem na meta. Se passar da meta, o excesso sai da semana seguinte. Se sobrar, você escolhe: somar na semana seguinte, ou dividir a sobra entre as semanas que faltam. Os ciclos seguintes começam sozinhos no dia indicado no último campo.</div>${g.on?`<button class="btn btn-danger" style="margin-top:12px" onclick="closeModal();wgOff('${esc(cat).replace(/'/g,"\\'")}')">Desligar meta semanal</button>`:''}`;
   renderModal2();
 }
 function wgOff(cat){ const g=wgGoals()[cat]; if(g){ g.on=false; saveState(); render(); } }
