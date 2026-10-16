@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261013-1">
+<meta name="cofre-version" content="20261015-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -234,6 +234,13 @@
   .obc-m{display:flex;align-items:center;gap:12px;} .obc-v{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;}
   .obc-x{font-size:12.5px;color:#8a6a1f;}
   .obc-l{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-align:left;padding:0;display:flex;gap:6px;align-items:center;font-family:'Inter';}
+  .wg{background:var(--brand-soft);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:7px;}
+  .wg.over{background:var(--red-soft);}
+  .wg-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;} .wg-h span{font-size:12px;color:var(--muted);}
+  .wg-big{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .wg.over .wg-big{color:var(--red);}
+  .wg-bar{height:7px;border-radius:4px;background:rgba(10,42,29,.12);overflow:hidden;} .wg-bar i{display:block;height:100%;border-radius:4px;background:var(--brand-deep);} .wg.over .wg-bar i{background:var(--red);}
+  .wg-r{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;} .wg-r span{color:var(--muted);} .wg-r b{text-align:right;font-variant-numeric:tabular-nums;}
   .pen{background:none;border:none;cursor:pointer;color:var(--muted);padding:2px;}
   .obtot{background:linear-gradient(180deg,var(--brand-soft),#f1f6f3);border-radius:20px;padding:14px 18px;margin-top:14px;}
   .obsem{background:var(--brand-soft);border:1px solid #cfe3d9;border-radius:22px;padding:16px 18px;}
@@ -1488,8 +1495,8 @@ function orcamentosViewBase(){
   const eye='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
   const pen='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>';
   const cards=stt.map(({b,s})=>{ const col=s.st==='ok'?'#0b4d3d':'#b0903f', badge=s.st==='exc'?'<span class="badge exc">Excedido</span>':s.st==='done'?'<span class="badge att">Acabou</span>':s.st==='att'?'<span class="badge att">Atenção</span>':'';
-    const pace=s.rest>0?(r?`<div class="gsub"><b>${fmt(s.rest/r.days*7)}</b>/semana · restam <b>${fmt(s.rest)}</b></div>`:`<div class="gsub">Restam <b>${fmt(s.rest)}</b></div>`):'';
-    return `<div class="obc ${s.st}"><div class="obc-h"><b>${esc(b.category)}</b><button class="pen" data-id="${b.id}" onclick="editBudget(this.dataset.id)" title="Editar">${pen}</button></div><div class="obc-m">${ringCol(s.p,46,col)}<div style="flex:1"><div class="obc-v">${fmt(s.g)}</div><div class="gsub">de ${fmt(b.amount)}</div></div>${badge}</div>${s.rest<0?`<div class="obc-x">Passou do limite em ${fmt(-s.rest)}</div>`:s.rest===0?`<div class="obc-x">Usou o limite total. Não sobrou nada.</div>`:pace}<button class="obc-l" data-c="${esc(b.category)}" onclick="verTransacoes(this.dataset.c)">${eye} Ver transações</button></div>`; }).join('');
+    const pace=s.rest>0?(wgOn(b.category)?`<div class="gsub">Restam <b>${fmt(s.rest)}</b> do limite mensal</div>`:r?`<div class="gsub"><b>${fmt(s.rest/r.days*7)}</b>/semana · restam <b>${fmt(s.rest)}</b></div>`:`<div class="gsub">Restam <b>${fmt(s.rest)}</b></div>`):'';
+    return `<div class="obc ${s.st}"><div class="obc-h"><b>${esc(b.category)}</b><button class="pen" data-id="${b.id}" onclick="editBudget(this.dataset.id)" title="Editar">${pen}</button></div><div class="obc-m">${ringCol(s.p,46,col)}<div style="flex:1"><div class="obc-v">${fmt(s.g)}</div><div class="gsub">de ${fmt(b.amount)}</div></div>${badge}</div>${s.rest<0?`<div class="obc-x">Passou do limite em ${fmt(-s.rest)}</div>`:s.rest===0?`<div class="obc-x">Usou o limite total. Não sobrou nada.</div>`:pace}${wgBlock(b)}<button class="obc-l" data-c="${esc(b.category)}" onclick="verTransacoes(this.dataset.c)">${eye} Ver transações</button></div>`; }).join('');
   const orcCats=new Set(bs.map(b=>b.category)), sem={};
   txInMonth(m).filter(t=>t.type==='expense'&&!orcCats.has(t.category)).forEach(t=>{ sem[t.category]=(sem[t.category]||0)+t.amount; });
   const semTot=Object.values(sem).reduce((a,v)=>a+v,0), semTop=Object.entries(sem).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([n,v])=>`${esc(n)} ${fmt(v)}`).join(' · ');
@@ -1518,6 +1525,86 @@ function categorySectionHtml(type,label){
   return cfgCard('cfg2_'+type,`Categorias de ${label} (${rows.length})`,body);
 }
 
+
+// ===== Meta semanal do ciclo (dentro do cartão do orçamento) =====
+// O ciclo começa todo dia X (padrão 8) e vai até a véspera do próximo início. A semana vai de segunda a domingo.
+// Toda semana que toca o ciclo conta como semana inteira. Estouro desconta da semana seguinte; sobra soma na seguinte ou é reajustada.
+// state.weeklyGoals[categoria] = {on, amount, startDay, startOverride:{inicioAutomatico:inicioReal}, carry:'soma'|'reajusta'}
+function wgISO(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function wgDate(s){ const p=String(s).slice(0,10).split('-').map(Number); return new Date(p[0],p[1]-1,p[2]); }
+function wgAdd(s,n){ const d=wgDate(s); d.setDate(d.getDate()+n); return wgISO(d); }
+function wgMon(s){ const d=wgDate(s); d.setDate(d.getDate()-((d.getDay()+6)%7)); return wgISO(d); }
+function wgBR(s){ return s.slice(8,10)+'/'+s.slice(5,7); }
+function wgAuto(y,m0,S){ const f=new Date(y,m0,1), last=new Date(f.getFullYear(),f.getMonth()+1,0).getDate(); return wgISO(new Date(f.getFullYear(),f.getMonth(),Math.min(S,last))); }
+function wgGoals(){ state.weeklyGoals=state.weeklyGoals||{}; return state.weeklyGoals; }
+function wgOn(cat){ const g=wgGoals()[cat]; return !!(g&&g.on&&g.amount>0); }
+function wgCycle(g,today){
+  const S=Math.min(31,Math.max(1,Number(g.startDay)||8)), o=g.startOverride||{}, t=wgDate(today), st=[];
+  for(let k=-2;k<=2;k++){ const a=wgAuto(t.getFullYear(),t.getMonth()+k,S); st.push({auto:a,eff:o[a]||a}); }
+  st.sort((x,y)=>x.eff.localeCompare(y.eff));
+  let i=0; st.forEach((s,k)=>{ if(s.eff<=today) i=k; });
+  return {start:st[i].eff,end:wgAdd(st[i+1].eff,-1),auto:st[i].auto};
+}
+function wgSpent(cat,from,to){
+  return state.transactions.filter(t=>t.type==='expense'&&t.category===cat&&t.date>=from&&t.date<=to&&!(t.linkedType==='bill'&&linkedToBudget(t.linkedBillId,cat))).reduce((a,t)=>a+t.amount,0);
+}
+function wgPlan(g,today){
+  const c=wgCycle(g,today), weeks=[];
+  for(let mon=wgMon(c.start);mon<=c.end;mon=wgAdd(mon,7)){ const sun=wgAdd(mon,6); weeks.push({mon,sun,from:mon<c.start?c.start:mon,to:sun>c.end?c.end:sun}); }
+  const N=weeks.length, amount=Number(g.amount)||0, reaj=g.carry==='reajusta';
+  let base=amount/N, carry=0, cur=0;
+  weeks.forEach((w,i)=>{
+    w.base=base; w.carry=carry; w.raw=base+carry; w.allow=Math.max(0,w.raw);
+    w.spent=wgSpent(g.__cat,w.from,w.to); w.diff=w.raw-w.spent;
+    if(today>=w.mon) cur=i;
+    if(w.diff<0) carry=w.diff;
+    else if(reaj){ const left=N-i-1; if(left>0) base+=w.diff/left; carry=0; }
+    else carry=w.diff;
+  });
+  const spentTot=weeks.reduce((a,w)=>a+w.spent,0), left=Math.max(1,N-cur);
+  return Object.assign(c,{weeks,N,cur,amount,spentTot,rest:amount-spentTot,ritmo:Math.max(0,(amount-spentTot)/left),next:weeks[cur+1]||null});
+}
+function wgBlock(b){
+  const cat=b.category, g=wgGoals()[cat], c=esc(cat);
+  if(!wgOn(cat)) return `<button class="obc-l" data-c="${c}" onclick="wgEdit(this.dataset.c)">+ Meta semanal do ciclo</button>`;
+  const p=wgPlan(Object.assign({},g,{__cat:cat}),todayISO()), w=p.weeks[p.cur], left=w.allow-w.spent, over=left<0;
+  const pc=w.allow>0?Math.min(100,Math.max(0,w.spent/w.allow*100)):(w.spent>0?100:0);
+  const parts=w.carry>0.004?` (meta ${fmt(w.base)} + sobra ${fmt(w.carry)})`:w.carry<-0.004?` (meta ${fmt(w.base)} − estouro ${fmt(-w.carry)})`:'';
+  const nxt=p.next?`<div class="wg-r"><span>Próxima semana, se parar por aqui</span><b>${fmt(Math.max(0,p.next.raw))}</b></div>`:'';
+  return `<div class="wg${over?' over':''}"><div class="wg-h"><b>Meta da semana</b><span>${wgBR(w.from)} a ${wgBR(w.to)}</span></div>
+    <div class="wg-big">${over?`Passou ${fmt(-left)}`:left===0&&w.allow>0?'Meta usada':`Restam ${fmt(left)}`}</div>
+    <div class="wg-bar"><i style="width:${pc}%"></i></div>
+    <div class="gsub">Gastou ${fmt(w.spent)} de ${fmt(w.allow)}${parts}${over?'. Isso desconta da próxima semana.':''}</div>
+    <div class="wg-r"><span>Ritmo ajustado</span><b>${fmt(p.ritmo)}/semana</b></div>${nxt}
+    <div class="wg-r"><span>Ciclo ${wgBR(p.start)} a ${wgBR(p.end)}</span><b>${fmt(p.spentTot)} de ${fmt(p.amount)} · semana ${p.cur+1} de ${p.N}</b></div>
+    <button class="obc-l" data-c="${c}" onclick="wgEdit(this.dataset.c)">Ajustar meta</button></div>`;
+}
+function wgEdit(cat){
+  const gs=wgGoals(), g=gs[cat]||{}, today=todayISO(), labS='Somar na semana seguinte', labR='Reajustar nas semanas que faltam';
+  const orig=wgCycle(g,today).start;
+  openForm('Meta semanal: '+cat,[
+    {id:'amount',label:'Valor para o ciclo inteiro (R$)',kind:'money',value:g.amount?String(g.amount).replace('.',','):'',placeholder:'500,00'},
+    {id:'day',label:'O ciclo começa todo dia (1 a 31)',kind:'number',value:g.startDay||8},
+    {id:'start',label:'Este ciclo começa em',kind:'date',value:orig},
+    {id:'carry',label:'Se sobrar dinheiro na semana',kind:'select',options:[labS,labR],value:g.carry==='reajusta'?labR:labS}
+  ],v=>{
+    const amount=parseMoney(v.amount), day=Math.round(Number(v.day));
+    if(!(amount>0)) return 'Digite o valor do ciclo, maior que zero.';
+    if(!(day>=1&&day<=31)) return 'O dia do ciclo vai de 1 a 31.';
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(v.start||'')) return 'Escolha a data de início deste ciclo.';
+    const oldDay=Number(g.startDay)||8, ov=(day===oldDay)?Object.assign({},g.startOverride||{}):{};
+    if(v.start!==orig){
+      const d=wgDate(v.start); let best=null;
+      for(let k=-1;k<=1;k++){ const a=wgAuto(d.getFullYear(),d.getMonth()+k,day), dist=Math.abs(wgDate(a)-d); if(!best||dist<best.dist) best={a,dist}; }
+      if(v.start===best.a) delete ov[best.a]; else ov[best.a]=v.start;
+    }
+    gs[cat]={on:true,amount:amount,startDay:day,startOverride:ov,carry:v.carry===labR?'reajusta':'soma'};
+    saveState();
+  },'Salvar','');
+  ui.modal.extra=`<div class="gsub" style="line-height:1.5"><b>Como funciona.</b> O ciclo vai do dia em que começa até a véspera do próximo (ex.: dia 8 ao dia 7). O valor é dividido pelas semanas, de segunda a domingo, e toda semana que toca o ciclo conta como inteira. Só contam os gastos desta categoria. Entradas de dinheiro não mexem na meta. Se passar da meta, o excesso sai da semana seguinte. Se sobrar, você escolhe: somar na semana seguinte, ou reajustar o que falta dividindo a sobra entre as próximas semanas. Para um mês diferente, mude a data de início deste ciclo.</div>${g.on?`<button class="btn btn-danger" style="margin-top:12px" onclick="closeModal();wgOff('${esc(cat).replace(/'/g,"\\'")}')">Desligar meta semanal</button>`:''}`;
+  renderModal2();
+}
+function wgOff(cat){ const g=wgGoals()[cat]; if(g){ g.on=false; saveState(); render(); } }
 
 // ===== Barra de abas: posição, recolher e arrastar =====
 const NAVGRIP='<span class="navgrip" title="Arraste para mover"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>';
