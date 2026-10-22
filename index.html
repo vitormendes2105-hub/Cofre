@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261015-2">
+<meta name="cofre-version" content="20261021-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -241,6 +241,9 @@
   .wg.over .wg-big{color:var(--red);}
   .wg-bar{height:7px;border-radius:4px;background:rgba(10,42,29,.12);overflow:hidden;} .wg-bar i{display:block;height:100%;border-radius:4px;background:var(--brand-deep);} .wg.over .wg-bar i{background:var(--red);}
   .wg-r{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;} .wg-r span{color:var(--muted);} .wg-r b{text-align:right;font-variant-numeric:tabular-nums;}
+  .bxl{display:flex;flex-direction:column;gap:6px;background:var(--brand-soft);border-radius:14px;padding:10px 12px;}
+  .bxl .wg-r{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;} .bxl .wg-r span{color:var(--muted);} .bxl .wg-r b{text-align:right;font-variant-numeric:tabular-nums;}
+  .card table.txtable tr.mv{background:var(--brand-soft);border-radius:12px;border-bottom-color:transparent;padding-left:8px;padding-right:8px;margin:4px 0;}
   .pen{background:none;border:none;cursor:pointer;color:var(--muted);padding:2px;}
   .obtot{background:linear-gradient(180deg,var(--brand-soft),#f1f6f3);border-radius:20px;padding:14px 18px;margin-top:14px;}
   .obsem{background:var(--brand-soft);border:1px solid #cfe3d9;border-radius:22px;padding:16px 18px;}
@@ -1233,8 +1236,8 @@ function tetoAnswer(n){
 // ===== Orçamentos por categoria, alertas e balanço do mês =====
 function budgetsOf(){ return state.budgets||[]; }
 function curMonth(){ const n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); }
-function budgetState(b,m){ const g=txInMonth(m).filter(t=>t.type==='expense'&&t.category===b.category&&!(t.linkedType==='bill'&&linkedToBudget(t.linkedBillId,b.category))).reduce((a,t)=>a+t.amount,0), p=b.amount>0?g/b.amount:0; const rest=Math.round((b.amount-g)*100)/100; return {g,p,rest,st:rest<0?'exc':(rest===0&&b.amount>0)?'done':p>=(((state.settings||{}).alertPct||80)/100)?'att':'ok'}; }
-function alertasBase(){ return budgetsOf().map(b=>({b,s:budgetState(b,ui.month)})).filter(x=>x.s.st!=='ok').map(x=>({st:x.s.st,t:x.s.st==='exc'?`<b>${esc(x.b.category)}</b> passou do limite em ${fmt(-x.s.rest)}.`:x.s.st==='done'?`<b>${esc(x.b.category)}</b> usou o limite total (${fmt(x.b.amount)}). Não sobrou nada.`:`<b>${esc(x.b.category)}</b> está em ${pct(x.s.p)}% do limite, restam ${fmt(x.s.rest)}.`})).sort((a,b)=>(a.st==='exc'?0:1)-(b.st==='exc'?0:1)); }
+function budgetState(b,m){ const L=budgetLimit(b,m), g=txInMonth(m).filter(t=>t.type==='expense'&&t.category===b.category&&!(t.linkedType==='bill'&&linkedToBudget(t.linkedBillId,b.category))).reduce((a,t)=>a+t.amount,0), p=L>0?g/L:(g>0?1:0); const rest=Math.round((L-g)*100)/100; return {g,p,rest,L,st:rest<0?'exc':(rest===0&&b.amount>0)?'done':p>=(((state.settings||{}).alertPct||80)/100)?'att':'ok'}; }
+function alertasBase(){ return budgetsOf().map(b=>({b,s:budgetState(b,ui.month)})).filter(x=>x.s.st!=='ok').map(x=>({st:x.s.st,t:x.s.st==='exc'?`<b>${esc(x.b.category)}</b> passou do limite em ${fmt(-x.s.rest)}.`:x.s.st==='done'?`<b>${esc(x.b.category)}</b> usou o limite total (${fmt(x.s.L)}). Não sobrou nada.`:`<b>${esc(x.b.category)}</b> está em ${pct(x.s.p)}% do limite, restam ${fmt(x.s.rest)}.`})).sort((a,b)=>(a.st==='exc'?0:1)-(b.st==='exc'?0:1)); }
 function alertasCard(){ const a=alertas(); if(!a.length) return ''; return `<div class="card" style="border-color:var(--gold)"><div class="eyebrow">Alertas</div>${a.map(x=>`<div class="plan" style="margin:6px 0${x.st==='exc'?';background:#fbeae8':''}">${x.t}</div>`).join('')}<button class="chip" onclick="setTab('orcamentos')">Ver orçamentos</button></div>`; }
 function addBudget(){
   const names=[...new Set(state.categories.filter(c=>c.type==='expense').map(c=>c.name))];
@@ -1292,7 +1295,7 @@ function tetoQs(){ return budgetsOf().map(b=>`Quanto posso gastar em ${b.categor
 function tetoPicker(){ return budgetsOf().length?'':`<div class="gsub" style="margin-top:12px">Crie limites na aba <b>Orçamentos</b> para eu responder quanto você pode gastar.</div>`; }
 function tetoLinha(b){
   const s=budgetState(b,ui.month), r=ritmo();
-  let h=`<div style="display:flex;gap:14px;align-items:center">${ringSvg(Math.min(1,s.p),64)}<div><b>${esc(b.category)}</b>: ${fmt(s.g)} de ${fmt(b.amount)}<br>`;
+  let h=`<div style="display:flex;gap:14px;align-items:center">${ringSvg(Math.min(1,s.p),64)}<div><b>${esc(b.category)}</b>: ${fmt(s.g)} de ${fmt(s.L)}<br>`;
   if(s.rest<0) h+=`Passou do limite em <b>${fmt(-s.rest)}</b>.`;
   else if(s.rest===0) h+=`Usou o limite total. Não sobrou nada.`;
   else { h+=`Restam <b>${fmt(s.rest)}</b>. `; h+= r?`Até o próximo recebimento${r.pd?` (dia ${r.pd})`:''}, em ${r.days} dia(s), dá <b>${fmt(s.rest/r.days)}/dia</b> ou <b>${fmt(s.rest/r.days*7)}/semana</b>.`:'(Por dia e por semana só no mês atual.)'; }
@@ -1365,7 +1368,7 @@ function ritmo(){
 }
 function tetoLinha(b){
   const s=budgetState(b,ui.month), r=ritmo();
-  let h=`<div style="display:flex;gap:14px;align-items:center">${ringSvg(Math.min(1,s.p),64)}<div><b>${esc(b.category)}</b>: ${fmt(s.g)} de ${fmt(b.amount)}<br>`;
+  let h=`<div style="display:flex;gap:14px;align-items:center">${ringSvg(Math.min(1,s.p),64)}<div><b>${esc(b.category)}</b>: ${fmt(s.g)} de ${fmt(s.L)}<br>`;
   if(s.rest<0) h+=`Passou do limite em <b>${fmt(-s.rest)}</b>.`;
   else if(s.rest===0) h+=`Usou o limite total. Não sobrou nada.`;
   else { h+=`Restam <b>${fmt(s.rest)}</b>. `; h+= r?`Você costuma receber ${r.from&&r.from!==r.pd?`entre o dia ${r.from} e o dia ${r.pd}`:`no dia ${r.pd}`}. Contando até o dia ${r.pd}, são ${r.days} dia(s): dá <b>${fmt(s.rest/r.days)}/dia</b> ou <b>${fmt(s.rest/r.days*7)}/semana</b>.`:'(Por dia e por semana só no mês atual.)'; }
@@ -1441,7 +1444,7 @@ function categoriesView(){
 }
 function orcamentosViewBase(){
   const bs=budgetsOf(), m=ui.month, r=ritmo(), w=paydayWindow();
-  const stt=bs.map(b=>({b,s:budgetState(b,m)})), tot=bs.reduce((a,b)=>a+b.amount,0), gast=stt.reduce((a,x)=>a+x.s.g,0), restTot=stt.reduce((a,x)=>a+Math.max(0,x.s.rest),0);
+  const stt=bs.map(b=>({b,s:budgetState(b,m)})), tot=bs.reduce((a,b)=>a+budgetLimit(b,m),0), gast=stt.reduce((a,x)=>a+x.s.g,0), restTot=stt.reduce((a,x)=>a+Math.max(0,x.s.rest),0);
   const cards=stt.map(({b,s})=>{ const badge=s.st==='exc'?'<span class="badge exc">Excedido</span>':s.st==='att'?'<span class="badge att">Atenção</span>':'';
     const pace=(r&&s.rest>0)?`<div class="gsub"><b>${fmt(s.rest/r.days)}</b>/dia · <b>${fmt(s.rest/r.days*7)}</b>/semana</div>`:'';
     return `<div class="orc ${s.st}">${ringSvg(Math.min(1,s.p),52)}<div class="orc-b"><div class="orc-t"><b>${esc(b.category)}</b>${badge}</div><div class="gsub">${fmt(s.g)} de ${fmt(b.amount)} · ${s.rest>=0?'restam '+fmt(s.rest):'excedido em '+fmt(-s.rest)}</div>${pace}</div><div class="gbtns"><button class="chip" data-id="${b.id}" onclick="editBudget(this.dataset.id)">Editar</button><button class="chip x" data-id="${b.id}" onclick="removeBudget(this.dataset.id)">Excluir</button></div></div>`; }).join('');
@@ -1491,12 +1494,12 @@ function editBudget(id){ const b=budgetsOf().find(x=>x.id===id); if(!b) return;
   ui.modal.extra=`<button class="btn btn-danger" onclick="closeModal();removeBudget('${id}')">Excluir orçamento</button>`; renderModal2(); }
 function orcamentosViewBase(){
   const bs=budgetsOf(), m=ui.month, r=ritmo(), w=paydayWindow();
-  const stt=bs.map(b=>({b,s:budgetState(b,m)})), tot=bs.reduce((a,b)=>a+b.amount,0), gast=stt.reduce((a,x)=>a+x.s.g,0), restTot=stt.reduce((a,x)=>a+Math.max(0,x.s.rest),0);
+  const stt=bs.map(b=>({b,s:budgetState(b,m)})), tot=bs.reduce((a,b)=>a+budgetLimit(b,m),0), gast=stt.reduce((a,x)=>a+x.s.g,0), restTot=stt.reduce((a,x)=>a+Math.max(0,x.s.rest),0);
   const eye='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
   const pen='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>';
   const cards=stt.map(({b,s})=>{ const col=s.st==='ok'?'#0b4d3d':'#b0903f', badge=s.st==='exc'?'<span class="badge exc">Excedido</span>':s.st==='done'?'<span class="badge att">Acabou</span>':s.st==='att'?'<span class="badge att">Atenção</span>':'';
     const pace=s.rest>0?(wgOn(b.category)?`<div class="gsub">Restam <b>${fmt(s.rest)}</b> do limite mensal</div>`:r?`<div class="gsub"><b>${fmt(s.rest/r.days*7)}</b>/semana · restam <b>${fmt(s.rest)}</b></div>`:`<div class="gsub">Restam <b>${fmt(s.rest)}</b></div>`):'';
-    return `<div class="obc ${s.st}"><div class="obc-h"><b>${esc(b.category)}</b><button class="pen" data-id="${b.id}" onclick="editBudget(this.dataset.id)" title="Editar">${pen}</button></div><div class="obc-m">${ringCol(s.p,46,col)}<div style="flex:1"><div class="obc-v">${fmt(s.g)}</div><div class="gsub">de ${fmt(b.amount)}</div></div>${badge}</div>${s.rest<0?`<div class="obc-x">Passou do limite em ${fmt(-s.rest)}</div>`:s.rest===0?`<div class="obc-x">Usou o limite total. Não sobrou nada.</div>`:pace}${wgBlock(b)}<button class="obc-l" data-c="${esc(b.category)}" onclick="verTransacoes(this.dataset.c)">${eye} Ver transações</button></div>`; }).join('');
+    return `<div class="obc ${s.st}"><div class="obc-h"><b>${esc(b.category)}</b><button class="pen" data-id="${b.id}" onclick="editBudget(this.dataset.id)" title="Editar">${pen}</button></div><div class="obc-m">${ringCol(s.p,46,col)}<div style="flex:1"><div class="obc-v">${fmt(s.g)}</div><div class="gsub">de ${fmt(s.L)}</div></div>${badge}</div>${budgetAdjNote(b,m)}${s.rest<0?`<div class="obc-x">Passou do limite em ${fmt(-s.rest)}</div>`:s.rest===0?`<div class="obc-x">Usou o limite total. Não sobrou nada.</div>`:pace}${budgetBoxBlock(b,m,s)}${wgBlock(b)}<button class="obc-l" data-id="${b.id}" onclick="budgetAdjForm(this.dataset.id)">± Ajustar limite deste mês</button><button class="obc-l" data-c="${esc(b.category)}" onclick="verTransacoes(this.dataset.c)">${eye} Ver transações</button></div>`; }).join('');
   const orcCats=new Set(bs.map(b=>b.category)), sem={};
   txInMonth(m).filter(t=>t.type==='expense'&&!orcCats.has(t.category)).forEach(t=>{ sem[t.category]=(sem[t.category]||0)+t.amount; });
   const semTot=Object.values(sem).reduce((a,v)=>a+v,0), semTop=Object.entries(sem).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([n,v])=>`${esc(n)} ${fmt(v)}`).join(' · ');
@@ -1578,7 +1581,12 @@ function wgBlock(b){
     <div class="gsub">Gastou ${fmt(w.spent)} de ${fmt(w.allow)}${parts}${over?'. Isso desconta da próxima semana.':''}</div>
     <div class="wg-r"><span>Ritmo ajustado</span><b>${fmt(p.ritmo)}/semana</b></div>${nxt}
     <div class="wg-r"><span>Período ${wgBR(p.start)} a ${wgBR(p.end)}</span><b>${fmt(p.spentTot)} de ${fmt(p.amount)} · semana ${p.cur+1} de ${p.N}</b></div>
-    <button class="obc-l" data-c="${c}" onclick="wgEdit(this.dataset.c)">Ajustar meta</button></div>`;
+    ${wgNotice(b,g,p)}<button class="obc-l" data-c="${c}" onclick="wgEdit(this.dataset.c)">Ajustar meta</button></div>`;
+}
+function wgNotice(b,g,p){
+  const pd=wgPending(g,b,p); if(!pd.ids.length||Math.abs(pd.net)<0.005) return '';
+  const less=pd.net<0, c=esc(b.category);
+  return `<div class="obc-x">Você ${less?'retirou':'repôs'} ${fmt(Math.abs(pd.net))} da caixinha neste período. ${less?'Diminuir':'Aumentar'} a meta?</div><div class="bx-act"><button class="chip" data-c="${c}" onclick="wgApplyCut(this.dataset.c)">${less?'Diminuir':'Aumentar'} a meta</button><button class="chip" data-c="${c}" onclick="wgIgnoreCut(this.dataset.c)">Manter</button></div>`;
 }
 function wgEdit(cat){
   const gs=wgGoals(), g=gs[cat]||{}, today=todayISO(), labS='Somar na semana seguinte', labR='Reajustar nas semanas que faltam';
@@ -1888,6 +1896,7 @@ function deleteOrphans(){
 function filteredTxInMonth(){
   const f = ui.txFilter;
   return txInMonth().filter(t=>{
+    if(f.type==='moves') return false;
     if(f.type!=='all' && t.type!==f.type) return false;
     if(f.category!=='all' && (t.type+'::'+t.category)!==f.category) return false;
     if(f.search && !normalizeStr(t.desc).includes(normalizeStr(f.search))) return false;
@@ -1921,6 +1930,7 @@ function sortTx(list){
 function transactionsView(){
   const allTxs = txInMonth();
   const txs = sortTx(filteredTxInMonth());
+  const mvs = mvItems(), rows = mixMoves(txs, mvs);
   const allSelected = txs.length>0 && txs.every(t=>ui.selectedTx.includes(t.id));
   const filterActive = ui.txFilter.category!=='all' || ui.txFilter.type!=='all' || ui.txFilter.search;
   const categoriesUsed = [...new Map(allTxs.map(t=>[t.type+'::'+t.category, {key:t.type+'::'+t.category, name:t.category, type:t.type}])).values()].sort((a,b)=>a.name.localeCompare(b.name));
@@ -1937,6 +1947,7 @@ function transactionsView(){
           <option value="all" ${ui.txFilter.type==='all'?'selected':''}>Todos os tipos</option>
           <option value="income" ${ui.txFilter.type==='income'?'selected':''}>Só entradas</option>
           <option value="expense" ${ui.txFilter.type==='expense'?'selected':''}>Só saídas</option>
+          ${(state.transfers||[]).length?`<option value="moves" ${ui.txFilter.type==='moves'?'selected':''}>Só caixinhas (separar e devolver)</option>`:''}
         </select>
         <select onchange="updateTxFilter('category', this.value)" style="width:auto;">
           <option value="all" ${ui.txFilter.category==='all'?'selected':''}>Todas as categorias</option>
@@ -1945,6 +1956,7 @@ function transactionsView(){
         <select onchange="setSetting('txSort',this.value)" style="width:auto;" title="Ordem da lista" aria-label="Ordem da lista">
           ${TX_SORTS.map(s=>`<option value="${s[0]}" ${txSortMode()===s[0]?'selected':''}>${s[1]}</option>`).join('')}
         </select>
+        ${(state.transfers||[]).length?`<label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;"><input type="checkbox" style="width:auto;margin:0;" ${mvShow()?'checked':''} onchange="setSetting('txMoves',this.checked)"/> Mostrar caixinhas</label>`:''}
         ${filterActive ? `<button class="btn btn-ghost" onclick="clearTxFilter()">Limpar filtro</button>` : ''}
       </div>
       ${txs.length && ui.selectedTx.length ? (()=>{
@@ -1961,13 +1973,13 @@ function transactionsView(){
           <button class="btn btn-danger" onclick="deleteSelectedTx()">${icon('trash')} Excluir</button>
         </div>`;
       })() : ''}
-      ${txs.length ? `<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin:0 0 4px 4px;cursor:pointer;"><input type="checkbox" style="width:auto;margin:0;" ${allSelected?'checked':''} onchange="toggleSelectAllTx(this.checked)"/> Selecionar todos</label><table class="txtable">
+      ${rows.length ? `<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin:0 0 4px 4px;cursor:pointer;"><input type="checkbox" style="width:auto;margin:0;" ${allSelected?'checked':''} onchange="toggleSelectAllTx(this.checked)"/> Selecionar todos</label><table class="txtable">
         <thead><tr>
           <th><input type="checkbox" ${allSelected?'checked':''} onchange="toggleSelectAllTx(this.checked)" title="Selecionar todos os visíveis"/></th>
           <th>Data</th><th>Descrição</th><th>Categoria</th><th style="text-align:right">Valor</th><th></th>
         </tr></thead>
         <tbody>
-          ${txs.map(t=>`
+          ${rows.map(t=>t.mv?mvRow(t.mv):`
             <tr>
               <td>${t.linkedType ? '🔒' : `<input type="checkbox" ${ui.selectedTx.includes(t.id)?'checked':''} onchange="toggleTxSelect('${t.id}')"/>`}</td>
               <td>${t.date.split('-').reverse().join('/')}</td>
@@ -2577,7 +2589,7 @@ function deleteAllData(){
   askConfirm('Isso vai apagar TODOS os lançamentos, contas, cartões e categorias personalizadas. Tem certeza?', ()=>{
     sySafetyCopy('antes-de-apagar-tudo');
     state = {
-      transactions: [], bills: [], cards: [], caixinhas: [], transfers: [],
+      transactions: [], bills: [], cards: [], caixinhas: [], transfers: [], budgetAdj: {},
       dashboardPrefs: { order:['chart','categories','categoriesIncome','commitments','projections'], collapsed:{} },
       categories: [
         {name:'Aluguel', color:'#3a5a8c', keywords:['opea','aluguel','securitizadora']},
@@ -2948,23 +2960,31 @@ function cxDelete(id){
     saveState(); render();
   });
 }
+function cxBudgetsOf(boxId){ return budgetsOf().filter(b=>b.boxId===boxId); }
+function cxCutField(id,devolver){
+  const lb=cxBudgetsOf(id)[0]; if(!lb) return null;
+  const yes=devolver?'Sim, diminuir o limite de '+lb.category+' neste mês':'Sim, aumentar o limite de '+lb.category+' neste mês', no='Não, manter o limite';
+  return {lb:lb,yes:yes,no:no,field:{id:'cut',label:devolver?'Esse dinheiro não volta para o '+lb.category+'?':'Esse dinheiro é reposição do '+lb.category+'?',kind:'select',options:devolver?[yes,no]:[no,yes],value:devolver?yes:no}};
+}
 function cxSeparar(id){
-  const b=boxById(id); if(!b) return;
-  openForm('Separar para '+b.name,[{id:'v',label:'Quanto separar da conta corrente (R$)',kind:'money'},{id:'d',label:'Data',kind:'date',value:todayISO()}],v=>{
+  const b=boxById(id); if(!b) return; const cf=cxCutField(id,false);
+  openForm('Separar para '+b.name,[{id:'v',label:'Quanto separar da conta corrente (R$)',kind:'money'},{id:'d',label:'Data',kind:'date',value:todayISO()}].concat(cf?[cf.field]:[]),v=>{
     const a=r2(parseMoney(v.v)); if(a<=0) return 'Digite um valor maior que zero.';
     const d=v.d||todayISO(), conta=contaAt(d);
     if(a>conta+0.004) return 'A conta corrente só tem '+fmtRaw(conta)+'. Se isso não bate com o banco, use “Ajustar ao saldo do banco”.';
-    state.transfers=(state.transfers||[]).concat([{id:'f'+uid(),date:d,boxId:id,amount:a}]); saveState();
+    const tr={id:'f'+uid(),date:d,boxId:id,amount:a}; if(cf&&v.cut===cf.yes) tr.budgetId=cf.lb.id;
+    state.transfers=(state.transfers||[]).concat([tr]); saveState();
   },'Separar','Separar não é gasto: o dinheiro só sai da conta corrente e vai para a caixinha.');
 }
 function cxDevolver(id){
-  const b=boxById(id); if(!b) return;
-  openForm('Devolver de '+b.name,[{id:'v',label:'Quanto devolver para a conta corrente (R$)',kind:'money'},{id:'d',label:'Data',kind:'date',value:todayISO()}],v=>{
+  const b=boxById(id); if(!b) return; const cf=cxCutField(id,true);
+  openForm('Devolver de '+b.name,[{id:'v',label:'Quanto devolver para a conta corrente (R$)',kind:'money'},{id:'d',label:'Data',kind:'date',value:todayISO()}].concat(cf?[cf.field]:[]),v=>{
     const a=r2(parseMoney(v.v)); if(a<=0) return 'Digite um valor maior que zero.';
     const d=v.d||todayISO(), bal=boxBalanceAt(id,d);
     if(a>bal+0.004) return 'A caixinha só tem '+fmtRaw(bal)+'.';
-    state.transfers=(state.transfers||[]).concat([{id:'f'+uid(),date:d,boxId:id,amount:-a}]); saveState();
-  },'Devolver');
+    const tr={id:'f'+uid(),date:d,boxId:id,amount:-a}; if(cf&&v.cut===cf.yes) tr.budgetId=cf.lb.id;
+    state.transfers=(state.transfers||[]).concat([tr]); saveState();
+  },'Devolver',cf?'Se o dinheiro vai para outra coisa e não volta, o limite do orçamento diminui só neste mês. Se pretende repor, escolha manter.':'');
 }
 function cxAjustarConta(){
   openForm('Saldo da conta corrente hoje',[{id:'v',label:'Quanto tem na conta hoje (R$)',kind:'money',value:String(contaAt(todayISO())).replace('.',',')}],v=>{
@@ -2982,6 +3002,102 @@ function cxMoves(id){
   const all=trs.concat(txs).sort((a,b)=>b.d.localeCompare(a.d));
   openForm(b.name+' · '+monthLabel(m),[],()=>null,'Fechar');
   ui.modal.extra=`<div style="max-height:320px;overflow:auto">${all.length?all.map(x=>`<div class="lig">${x.h}</div>`).join(''):'<div class="empty">Sem movimentos neste mês.</div>'}</div>`; renderModal2();
+}
+
+// ===== Limite do orçamento por mês, ligação com a caixinha e movimentações no Lançamentos =====
+// Limite do mês = limite padrão + devoluções/separações marcadas para mexer no limite + ajustes manuais do mês.
+function budgetAdjDetail(b,m){
+  const tr=r2((state.transfers||[]).filter(t=>t.budgetId===b.id&&t.date.slice(0,7)===m).reduce((a,t)=>a+t.amount,0));
+  const man=r2(Number(((state.budgetAdj||{})[b.id+'|'+m])||0));
+  return {tr:tr,man:man,limit:Math.max(0,r2((Number(b.amount)||0)+tr+man))};
+}
+function budgetLimit(b,m){ return budgetAdjDetail(b,m).limit; }
+function budgetAdjNote(b,m){
+  const d=budgetAdjDetail(b,m); if(!d.tr&&!d.man) return '';
+  const parts=[];
+  if(d.tr) parts.push((d.tr<0?'− ':'+ ')+fmt(Math.abs(d.tr))+(d.tr<0?' retirados da caixinha':' repostos na caixinha'));
+  if(d.man) parts.push((d.man<0?'− ':'+ ')+fmt(Math.abs(d.man))+' ajustados');
+  return `<div class="gsub">Limite padrão ${fmt(b.amount)} · ${parts.join(' · ')}</div>`;
+}
+function budgetAdjForm(id){
+  const b=budgetsOf().find(x=>x.id===id); if(!b) return; const m=ui.month, d=budgetAdjDetail(b,m), key=id+'|'+m;
+  openForm('Ajustar limite de '+b.category,[{id:'v',label:'Quanto tirar do limite de '+monthLabel(m)+' (R$)',kind:'money',placeholder:'Ex.: 128,00'}],v=>{
+    const a=parseMoney(v.v); if(!a) return 'Digite um valor. Use um número negativo para aumentar o limite.';
+    state.budgetAdj=state.budgetAdj||{}; state.budgetAdj[key]=r2((Number(state.budgetAdj[key])||0)-a); saveState();
+  },'Aplicar','Limite deste mês agora: '+fmtRaw(d.limit)+' (padrão '+fmtRaw(b.amount)+'). Só este mês muda. Para aumentar o limite, digite um número negativo.');
+  if(d.man) ui.modal.extra=`<button class="btn btn-ghost" onclick="closeModal();budgetAdjReset('${id}')">Desfazer ajustes manuais deste mês</button>`;
+  renderModal2();
+}
+function budgetAdjReset(id){ const key=id+'|'+ui.month; if(state.budgetAdj&&state.budgetAdj[key]!==undefined){ delete state.budgetAdj[key]; saveState(); render(); } }
+function budgetBoxBlock(b,m,s){
+  const bx=b.boxId?boxById(b.boxId):null;
+  if(!bx) return boxes().length?`<button class="obc-l" data-id="${b.id}" onclick="budgetLinkBox(this.dataset.id)">+ Ligar a uma caixinha</button>`:'';
+  const sal=Math.max(0,boxBalanceAt(bx.id,boxEnd(m))), restPos=Math.max(0,s.rest), real=Math.min(restPos,sal);
+  const lo=m+'-01', hi=m+'-31';
+  const outros=r2(state.transactions.filter(t=>t.boxId===bx.id&&t.type==='expense'&&t.category!==b.category&&t.date>=lo&&t.date<=hi).reduce((a,t)=>a+(t.boxAmt||0),0)
+    -(state.transfers||[]).filter(t=>t.boxId===bx.id&&t.amount<0&&t.date>=lo&&t.date<=hi).reduce((a,t)=>a+t.amount,0));
+  const diverge=restPos>sal+0.004;
+  return `<div class="bxl"><div class="wg-r"><span>Caixinha ${esc(bx.name)}</span><b>${fmt(sal)}</b></div><div class="wg-r"><span>Disponível de verdade</span><b>${fmt(real)}</b></div>${diverge?`<div class="obc-x">O limite ainda mostra ${fmt(restPos)}, mas a caixinha tem só ${fmt(sal)}.${outros>0.004?' Neste mês saíram '+fmt(outros)+' dela para outras coisas.':''}</div>`:''}<button class="obc-l" data-id="${b.id}" onclick="budgetUnlinkBox(this.dataset.id)">Desligar da caixinha</button></div>`;
+}
+function budgetLinkBox(id){
+  const b=budgetsOf().find(x=>x.id===id); if(!b) return; const bs=boxes(); if(!bs.length) return;
+  const sg=suggestBox(b.category,''), lab=x=>x.name+((sg&&sg.id===x.id)?' (sugerida)':''), labels=bs.map(lab);
+  openForm('Ligar '+b.category+' a uma caixinha',[{id:'c',label:'Caixinha',kind:'select',options:labels,value:lab(sg||bs[0])}],v=>{
+    const i=labels.indexOf(v.c); if(i<0) return 'Escolha uma caixinha.'; b.boxId=bs[i].id; saveState();
+  },'Ligar','A ligação é sua: o app só sugere pelo nome. Depois, ao devolver ou separar dessa caixinha, você pode escolher mexer no limite deste orçamento.');
+}
+function budgetUnlinkBox(id){ const b=budgetsOf().find(x=>x.id===id); if(!b) return; delete b.boxId; saveState(); render(); }
+
+// movimentações das caixinhas dentro do Lançamentos (não são entrada nem saída: só mudam o dinheiro de lugar)
+function mvShow(){ return (state.settings||{}).txMoves!==false; }
+function mvItems(){
+  const f=ui.txFilter; if(f.category!=='all') return [];
+  if(f.type==='income'||f.type==='expense') return [];
+  if(f.type!=='moves'&&!mvShow()) return [];
+  const q=f.search?normalizeStr(f.search):'';
+  return (state.transfers||[]).filter(t=>t.date.slice(0,7)===ui.month&&boxById(t.boxId)).filter(t=>{
+    if(!q) return true; return normalizeStr(boxById(t.boxId).name+' '+(t.amount>0?'separado separar':'devolvido devolver')+' caixinha').includes(q); });
+}
+function mixMoves(txs,mvs){
+  const out=txs.map(t=>({t:t,d:t.date})), m=mvs.slice(), mode=txSortMode();
+  if(!m.length) return txs;
+  const asc=mode==='date_asc';
+  m.sort((a,b)=>asc?a.date.localeCompare(b.date):b.date.localeCompare(a.date));
+  if(mode==='amount_desc'||mode==='amount_asc') return txs.concat(m.map(x=>({mv:x})));
+  const res=[]; let i=0, j=0;
+  while(i<out.length||j<m.length){
+    if(j>=m.length){ res.push(out[i++].t); continue; }
+    if(i>=out.length){ res.push({mv:m[j++]}); continue; }
+    const takeMove=asc?(m[j].date<=out[i].d):(m[j].date>=out[i].d);
+    if(takeMove) res.push({mv:m[j++]}); else res.push(out[i++].t);
+  }
+  return res;
+}
+function mvRow(t){
+  const bx=boxById(t.boxId), a=Math.abs(t.amount), lb=t.amount>0?'Separado para a caixinha '+esc(bx.name):'Devolvido da caixinha '+esc(bx.name)+' para a conta';
+  const bd=t.budgetId?budgetsOf().find(x=>x.id===t.budgetId):null;
+  const cut=bd?' • limite de '+esc(bd.category)+' '+(t.amount<0?'−':'+')+' '+fmt(a):'';
+  return `<tr class="mv"><td>⇄</td><td>${t.date.split('-').reverse().join('/')}</td><td>${lb}<br><span class="paytag">movimentação da caixinha • não conta como gasto${cut}</span></td><td><span class="tag" style="background:var(--brand-soft);color:var(--brand-deep);border-color:var(--brand-soft);">Caixinha</span></td><td class="num" style="color:var(--muted)">${t.amount>0?'→':'←'} ${fmt(a)}</td><td class="row-actions"><button onclick="mvDelete('${t.id}')" title="Excluir">${icon('trash')}</button></td></tr>`;
+}
+function mvDelete(id){
+  const t=(state.transfers||[]).find(x=>x.id===id); if(!t) return; const bx=boxById(t.boxId);
+  askConfirm('Excluir esta movimentação'+(bx?' da caixinha <b>'+esc(bx.name)+'</b>':'')+' ('+fmt(Math.abs(t.amount))+')? O saldo da caixinha e da conta voltam ao que eram antes'+(t.budgetId?', e o limite do orçamento também':'')+'.',()=>{
+    state.transfers=(state.transfers||[]).filter(x=>x.id!==id); saveState(); render(); });
+}
+// aviso na meta semanal: dinheiro retirado/reposto da caixinha ligada neste período
+function wgPending(g,b,p){
+  const ap=g.applied||[]; const l=(state.transfers||[]).filter(t=>t.budgetId===b.id&&t.date>=p.start&&t.date<=p.end&&!ap.includes(t.id));
+  return {ids:l.map(t=>t.id),net:r2(l.reduce((a,t)=>a+t.amount,0))};
+}
+function wgApplyCut(cat){
+  const b=budgetsOf().find(x=>x.category===cat), g=wgGoals()[cat]; if(!b||!g) return;
+  const p=wgPlan(Object.assign({},g,{__cat:cat}),todayISO()), pd=wgPending(g,b,p); if(!pd.ids.length) return;
+  g.amount=Math.max(0,r2((Number(g.amount)||0)+pd.net)); g.applied=(g.applied||[]).concat(pd.ids); saveState(); render();
+}
+function wgIgnoreCut(cat){
+  const b=budgetsOf().find(x=>x.category===cat), g=wgGoals()[cat]; if(!b||!g) return;
+  const p=wgPlan(Object.assign({},g,{__cat:cat}),todayISO()), pd=wgPending(g,b,p);
+  g.applied=(g.applied||[]).concat(pd.ids); saveState(); render();
 }
 
 // ===== Quanto o seu dia custa (todos os gastos do dia a dia) e o que isso significa até o próximo recebimento =====
