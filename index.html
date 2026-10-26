@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261025-1">
+<meta name="cofre-version" content="20261026-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -243,7 +243,7 @@
   .wg-bar{height:7px;border-radius:4px;background:rgba(10,42,29,.12);overflow:hidden;} .wg-bar i{display:block;height:100%;border-radius:4px;background:var(--brand-deep);} .wg.over .wg-bar i{background:var(--red);}
   .wg-r{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;} .wg-r span{color:var(--muted);} .wg-r b{text-align:right;font-variant-numeric:tabular-nums;}
   .bxl{display:flex;flex-direction:column;gap:6px;background:var(--brand-soft);border-radius:14px;padding:10px 12px;}
-  .bxl .wg-r{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;} .bxl .wg-r span{color:var(--muted);} .bxl .wg-r b{text-align:right;font-variant-numeric:tabular-nums;}
+  .bxl .wg-r{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px;} .bxl .wg-r span{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;} .bxl .wg-r b{white-space:nowrap;} .bxl .chip{padding:2px 9px;font-size:11px;} .bxl .wg-r span{color:var(--muted);} .bxl .wg-r b{text-align:right;font-variant-numeric:tabular-nums;}
   .card table.txtable tr.mv{background:var(--brand-soft);border-radius:12px;border-bottom-color:transparent;padding-left:8px;padding-right:8px;margin:4px 0;}
   .pen{background:none;border:none;cursor:pointer;color:var(--muted);padding:2px;}
   .obtot{background:linear-gradient(180deg,var(--brand-soft),#f1f6f3);border-radius:20px;padding:14px 18px;margin-top:14px;}
@@ -2957,11 +2957,13 @@ function cxDelete(id){
   const b=boxById(id); if(!b) return;
   askConfirm('Excluir a caixinha <b>'+esc(b.name)+'</b>? O saldo dela ('+fmt(boxBalanceAt(id,todayISO()))+') volta para a conta corrente. Seus lançamentos não são apagados.',()=>{
     state.caixinhas=boxes().filter(x=>x.id!==id); state.transfers=(state.transfers||[]).filter(t=>t.boxId!==id);
+    budgetsOf().forEach(b=>{ const l=budgetBoxIds(b).filter(x=>x!==id); if(l.length) b.boxIds=l; else delete b.boxIds; delete b.boxId; });
     state.transactions.forEach(t=>{ if(t.boxId===id){ delete t.boxId; delete t.boxAmt; } });
     saveState(); render();
   });
 }
-function cxBudgetsOf(boxId){ return budgetsOf().filter(b=>b.boxId===boxId); }
+function budgetBoxIds(b){ return Array.isArray(b.boxIds)?b.boxIds:(b.boxId?[b.boxId]:[]); }
+function cxBudgetsOf(boxId){ return budgetsOf().filter(b=>budgetBoxIds(b).includes(boxId)); }
 function cxCutField(id,devolver){
   const lb=cxBudgetsOf(id)[0]; if(!lb) return null;
   const yes=devolver?'Sim, diminuir o limite de '+lb.category+' neste mês':'Sim, aumentar o limite de '+lb.category+' neste mês', no='Não, manter o limite';
@@ -3031,23 +3033,39 @@ function budgetAdjForm(id){
 }
 function budgetAdjReset(id){ const key=id+'|'+ui.month; if(state.budgetAdj&&state.budgetAdj[key]!==undefined){ delete state.budgetAdj[key]; saveState(); render(); } }
 function budgetBoxBlock(b,m,s){
-  const bx=b.boxId?boxById(b.boxId):null;
-  if(!bx) return boxes().length?`<button class="obc-l" data-id="${b.id}" onclick="budgetLinkBox(this.dataset.id)">+ Ligar a uma caixinha</button>`:'';
-  const sal=Math.max(0,boxBalanceAt(bx.id,boxEnd(m))), restPos=Math.max(0,s.rest), real=Math.min(restPos,sal);
-  const lo=m+'-01', hi=m+'-31';
-  const outros=r2(state.transactions.filter(t=>t.boxId===bx.id&&t.type==='expense'&&t.category!==b.category&&t.date>=lo&&t.date<=hi).reduce((a,t)=>a+(t.boxAmt||0),0)
-    -(state.transfers||[]).filter(t=>t.boxId===bx.id&&t.amount<0&&t.date>=lo&&t.date<=hi).reduce((a,t)=>a+t.amount,0));
+  const ids=budgetBoxIds(b).filter(id=>boxById(id)), bxs=ids.map(boxById), free=boxes().filter(x=>!ids.includes(x.id));
+  const linkBtn=free.length?`<button class="obc-l" data-id="${b.id}" onclick="budgetLinkBox(this.dataset.id)">${bxs.length?'+ Ligar outra caixinha':'+ Ligar a uma caixinha'}</button>`:'';
+  if(!bxs.length) return boxes().length?linkBtn:'';
+  const lo=m+'-01', hi=m+'-31', end=boxEnd(m);
+  const sals=bxs.map(x=>Math.max(0,boxBalanceAt(x.id,end))), sal=r2(sals.reduce((a,v)=>a+v,0));
+  const restPos=Math.max(0,s.rest), real=Math.min(restPos,sal);
+  const outros=r2(bxs.reduce((acc,x)=>acc+state.transactions.filter(t=>t.boxId===x.id&&t.type==='expense'&&t.category!==b.category&&t.date>=lo&&t.date<=hi).reduce((a,t)=>a+(t.boxAmt||0),0)
+    -(state.transfers||[]).filter(t=>t.boxId===x.id&&t.amount<0&&t.date>=lo&&t.date<=hi).reduce((a,t)=>a+t.amount,0),0));
   const diverge=restPos>sal+0.004;
-  return `<div class="bxl"><div class="wg-r"><span>Caixinha ${esc(bx.name)}</span><b>${fmt(sal)}</b></div><div class="wg-r"><span>Disponível de verdade</span><b>${fmt(real)}</b></div>${diverge?`<div class="obc-x">O limite ainda mostra ${fmt(restPos)}, mas a caixinha tem só ${fmt(sal)}.${outros>0.004?' Neste mês saíram '+fmt(outros)+' dela para outras coisas.':''}</div>`:''}<button class="obc-l" data-id="${b.id}" onclick="budgetUnlinkBox(this.dataset.id)">Desligar da caixinha</button></div>`;
+  const rows=bxs.map((x,i)=>`<div class="wg-r"><span>Caixinha ${esc(x.name)} <button class="chip x" data-id="${b.id}" data-b="${x.id}" onclick="budgetUnlinkBox(this.dataset.id,this.dataset.b)">Desligar</button></span><b>${fmt(sals[i])}</b></div>`).join('');
+  return `<div class="bxl">${rows}${bxs.length>1?`<div class="wg-r"><span>Soma das caixinhas</span><b>${fmt(sal)}</b></div>`:''}<div class="wg-r"><span>Disponível de verdade</span><b>${fmt(real)}</b></div>${diverge?`<div class="obc-x">O limite ainda mostra ${fmt(restPos)}, mas ${bxs.length>1?'as caixinhas têm':'a caixinha tem'} só ${fmt(sal)}.${outros>0.004?' Neste mês saíram '+fmt(outros)+' delas para outras coisas.':''}</div>`:''}${linkBtn}</div>`;
 }
 function budgetLinkBox(id){
-  const b=budgetsOf().find(x=>x.id===id); if(!b) return; const bs=boxes(); if(!bs.length) return;
-  const sg=suggestBox(b.category,''), lab=x=>x.name+((sg&&sg.id===x.id)?' (sugerida)':''), labels=bs.map(lab);
-  openForm('Ligar '+b.category+' a uma caixinha',[{id:'c',label:'Caixinha',kind:'select',options:labels,value:lab(sg||bs[0])}],v=>{
-    const i=labels.indexOf(v.c); if(i<0) return 'Escolha uma caixinha.'; b.boxId=bs[i].id; saveState();
-  },'Ligar','A ligação é sua: o app só sugere pelo nome. Depois, ao devolver ou separar dessa caixinha, você pode escolher mexer no limite deste orçamento.');
+  const b=budgetsOf().find(x=>x.id===id); if(!b) return; const have=budgetBoxIds(b), bs=boxes().filter(x=>!have.includes(x.id)); if(!bs.length) return;
+  const sg=suggestBox(b.category,''), sgOk=sg&&bs.some(x=>x.id===sg.id), lab=x=>x.name+((sgOk&&sg.id===x.id)?' (sugerida)':''), labels=bs.map(lab);
+  openForm('Ligar '+b.category+' a uma caixinha',[{id:'c',label:'Caixinha',kind:'select',options:labels,value:lab(sgOk?sg:bs[0])}],v=>{
+    const i=labels.indexOf(v.c); if(i<0) return 'Escolha uma caixinha.';
+    const bx=bs[i]; b.boxIds=have.concat([bx.id]); delete b.boxId; saveState();
+    setTimeout(()=>budgetAskOldReturns(b.id,bx.id),0);
+  },'Ligar','A ligação é sua: o app só sugere pelo nome. Dá para ligar mais de uma caixinha ao mesmo orçamento (por exemplo, Combustível carro e Combustível moto). Depois, ao devolver ou separar dessas caixinhas, você pode escolher mexer no limite deste orçamento.');
 }
-function budgetUnlinkBox(id){ const b=budgetsOf().find(x=>x.id===id); if(!b) return; delete b.boxId; saveState(); render(); }
+// ao ligar: se já houve devoluções desta caixinha no mês (sem marcar o limite), pergunta se desconta agora
+function budgetAskOldReturns(budgetId,boxId){
+  const b=budgetsOf().find(x=>x.id===budgetId), bx=boxById(boxId); if(!b||!bx) return; const m=ui.month;
+  const l=(state.transfers||[]).filter(t=>t.boxId===boxId&&t.amount<0&&!t.budgetId&&t.date.slice(0,7)===m), tot=r2(-l.reduce((a,t)=>a+t.amount,0));
+  if(tot<=0.004) return;
+  askConfirm('Você devolveu '+fmt(tot)+' da caixinha <b>'+esc(bx.name)+'</b> em '+monthLabel(m)+'. Descontar esse valor do limite de <b>'+esc(b.category)+'</b> neste mês?',()=>{
+    l.forEach(t=>{ t.budgetId=b.id; }); saveState(); render(); });
+}
+function budgetUnlinkBox(id,boxId){
+  const b=budgetsOf().find(x=>x.id===id); if(!b) return;
+  const l=budgetBoxIds(b).filter(x=>x!==boxId); if(l.length) b.boxIds=l; else delete b.boxIds; delete b.boxId; saveState(); render();
+}
 
 // movimentações das caixinhas dentro do Lançamentos (não são entrada nem saída: só mudam o dinheiro de lugar)
 function mvShow(){ return (state.settings||{}).txMoves!==false; }
