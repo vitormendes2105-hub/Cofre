@@ -153,9 +153,13 @@
   .al-item .chip{flex:none;padding:5px 11px;}
   .al-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
   .al-head h2{margin:0;}
-  .al-toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);width:min(440px,calc(100vw - 24px));max-height:60vh;overflow:auto;background:var(--ink);color:#fff;border-radius:16px;padding:12px 14px;z-index:250;font-size:13px;line-height:1.5;box-shadow:0 10px 30px rgba(14,22,32,.35);transition:opacity .25s;cursor:pointer;}
-  .al-toast-h{display:flex;justify-content:space-between;gap:10px;margin-bottom:6px;} .al-toast-h span{opacity:.65;font-size:11.5px;}
-  .al-toast-i{padding:6px 0;border-top:1px solid rgba(255,255,255,.14);} .al-toast-i.exc{color:#ffb4ad;}
+  .al-toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 92px);transform:translateX(-50%);width:min(420px,calc(100vw - 28px));background:var(--surface);color:var(--ink);border:1px solid var(--gold);border-radius:18px;padding:12px 14px 14px;z-index:250;font-size:13.5px;line-height:1.5;box-shadow:0 12px 32px rgba(14,22,32,.22);transition:opacity .25s,margin-top .25s;touch-action:pan-x;}
+  .al-toast-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+  .al-toast-h b{font-size:14px;}
+  .al-toast-x{border:none;background:var(--surface-2);color:var(--muted);width:30px;height:30px;border-radius:50%;font-size:18px;line-height:1;cursor:pointer;padding:0;}
+  .al-toast-i{background:var(--gold-soft);border-radius:12px;padding:8px 11px;margin:6px 0;}
+  .al-toast-i.exc{background:var(--red-soft);}
+  .al-toast-f{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:12.5px;color:var(--muted);}
   .hdr-cta{background:var(--brand-deep);color:#fff;border:none;border-radius:999px;padding:11px 20px;font-weight:600;font-size:13.5px;cursor:pointer;font-family:'Inter';}
   nav{gap:8px;}
   nav button{border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.7);padding:9px 17px;}
@@ -2181,11 +2185,18 @@ function alertBandToggle(){ setSetting('alertBandOpen', !(state.settings&&state.
 function alertToast(){
   if(ui.alertToastDone) return; ui.alertToastDone=true;
   if(document.querySelector('.modal-bg')) return;
-  const a=alertasVisiveis(); if(!a.length) return;
+  const a=alertasVisiveis().slice().sort((x,y)=>(x.st==='exc'?0:1)-(y.st==='exc'?0:1)); if(!a.length) return;
+  const MAX=3, ver=a.slice(0,MAX), resto=a.length-ver.length;
   const t=document.createElement('div'); t.id='alertToast'; t.className='al-toast'; t.setAttribute('role','status');
-  t.innerHTML=`<div class="al-toast-h"><b>${a.length} ${a.length===1?'alerta':'alertas'}</b><span>toque para fechar</span></div>`+a.map(x=>`<div class="al-toast-i${x.st==='exc'?' exc':''}">${x.t}</div>`).join('');
-  const bye=()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),260); };
-  t.onclick=bye; document.body.appendChild(t); setTimeout(bye,7000);
+  t.innerHTML=`<div class="al-toast-h"><b>${a.length} ${a.length===1?'alerta':'alertas'}</b><button class="al-toast-x" aria-label="Fechar" title="Fechar">×</button></div>`
+    +ver.map(x=>`<div class="al-toast-i${x.st==='exc'?' exc':''}">${x.t}</div>`).join('')
+    +`<div class="al-toast-f"><span>${resto>0?`e mais ${resto}`:'&nbsp;'}</span><button class="chip" id="alertToastAll">${resto>0?'Ver todos':'Abrir alertas'}</button></div>`;
+  let timer=null; const bye=()=>{ clearTimeout(timer); t.style.opacity='0'; setTimeout(()=>t.remove(),260); };
+  t.querySelector('.al-toast-x').onclick=bye;
+  t.querySelector('#alertToastAll').onclick=()=>{ bye(); alertPanelToggle(true); };
+  let y0=null; t.addEventListener('touchstart',e=>{ y0=e.touches[0].clientY; clearTimeout(timer); },{passive:true});
+  t.addEventListener('touchend',e=>{ const dy=(e.changedTouches[0].clientY-y0); y0=null; if(Math.abs(dy)>40) bye(); else timer=setTimeout(bye,5000); },{passive:true});
+  document.body.appendChild(t); timer=setTimeout(bye,9000);
 }
 
 // ===== Conciliar com o banco: a diferença vira um lançamento de ajuste visível =====
