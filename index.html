@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261026-1">
+<meta name="cofre-version" content="20261026-2">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -1500,7 +1500,7 @@ function orcamentosViewBase(){
   const pen='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>';
   const cards=stt.map(({b,s})=>{ const col=s.st==='ok'?'#0b4d3d':'#b0903f', badge=s.st==='exc'?'<span class="badge exc">Excedido</span>':s.st==='done'?'<span class="badge att">Acabou</span>':s.st==='att'?'<span class="badge att">Atenção</span>':'';
     const pace=s.rest>0?(wgOn(b.category)?`<div class="gsub">Restam <b>${fmt(s.rest)}</b> do limite mensal</div>`:r?`<div class="gsub"><b>${fmt(s.rest/r.days*7)}</b>/semana · restam <b>${fmt(s.rest)}</b></div>`:`<div class="gsub">Restam <b>${fmt(s.rest)}</b></div>`):'';
-    return `<div class="obc ${s.st}"><div class="obc-h"><b>${esc(b.category)}</b><button class="pen" data-id="${b.id}" onclick="editBudget(this.dataset.id)" title="Editar">${pen}</button></div><div class="obc-m">${ringCol(s.p,46,col)}<div style="flex:1"><div class="obc-v">${fmt(s.g)}</div><div class="gsub">de ${fmt(s.L)}</div></div>${badge}</div>${budgetAdjNote(b,m)}${s.rest<0?`<div class="obc-x">Passou do limite em ${fmt(-s.rest)}</div>`:s.rest===0?`<div class="obc-x">Usou o limite total. Não sobrou nada.</div>`:pace}${budgetBoxBlock(b,m,s)}${wgBlock(b)}<button class="obc-l" data-id="${b.id}" onclick="budgetAdjForm(this.dataset.id)">± Ajustar limite deste mês</button><button class="obc-l" data-c="${esc(b.category)}" onclick="verTransacoes(this.dataset.c)">${eye} Ver transações</button></div>`; }).join('');
+    return `<div class="obc ${s.st}"><div class="obc-h"><b>${esc(b.category)}</b><button class="pen" data-id="${b.id}" onclick="editBudget(this.dataset.id)" title="Editar">${pen}</button></div><div class="obc-m">${ringCol(s.p,46,col)}<div style="flex:1"><div class="obc-v">${fmt(s.g)}</div><div class="gsub">de ${fmt(s.L)}</div></div>${badge}</div>${budgetAdjNote(b,m)}${s.rest<0?`<div class="obc-x">Passou do limite em ${fmt(-s.rest)}</div>`:s.rest===0?`<div class="obc-x">Usou o limite total. Não sobrou nada.</div>`:pace}${budgetBoxBlock(b,m,s)}${wgBlock(b)}<button class="obc-l" data-id="${b.id}" onclick="budgetAdjForm(this.dataset.id)">± Ajustar limite deste mês</button><button class="obc-l" data-id="${b.id}" onclick="budgetWhy(this.dataset.id)">? Por que este limite e este gasto</button><button class="obc-l" data-c="${esc(b.category)}" onclick="verTransacoes(this.dataset.c)">${eye} Ver transações</button></div>`; }).join('');
   const orcCats=new Set(bs.map(b=>b.category)), sem={};
   txInMonth(m).filter(t=>t.type==='expense'&&!orcCats.has(t.category)).forEach(t=>{ sem[t.category]=(sem[t.category]||0)+t.amount; });
   const semTot=Object.values(sem).reduce((a,v)=>a+v,0), semTop=Object.entries(sem).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([n,v])=>`${esc(n)} ${fmt(v)}`).join(' · ');
@@ -3030,6 +3030,28 @@ function budgetAdjForm(id){
   },'Aplicar','Limite deste mês agora: '+fmtRaw(d.limit)+' (padrão '+fmtRaw(b.amount)+'). Só este mês muda. Para aumentar o limite, digite um número negativo.');
   if(d.man) ui.modal.extra=`<button class="btn btn-ghost" onclick="closeModal();budgetAdjReset('${id}')">Desfazer ajustes manuais deste mês</button>`;
   renderModal2();
+}
+function budgetWhy(id){
+  const b=budgetsOf().find(x=>x.id===id); if(!b) return; const m=ui.month, d=budgetAdjDetail(b,m), s=budgetState(b,m);
+  const trs=(state.transfers||[]).filter(t=>t.budgetId===b.id&&t.date.slice(0,7)===m).sort((x,y)=>x.date<y.date?-1:1);
+  const gl=txInMonth(m).filter(t=>t.type==='expense'&&t.category===b.category&&!(t.linkedType==='bill'&&linkedToBudget(t.linkedBillId,b.category))).sort((x,y)=>x.date<y.date?-1:1);
+  const row=(l,v,st)=>`<div class="lig" style="${st||''}"><span>${l}</span><b>${v}</b></div>`;
+  let h='<div style="max-height:380px;overflow:auto"><div class="eyebrow">Limite</div>'+row('Limite padrão do orçamento',fmt(b.amount));
+  trs.forEach(t=>{ const bx=boxById(t.boxId); h+=row(t.date.slice(8,10)+'/'+t.date.slice(5,7)+' · '+(t.amount<0?'devolvido de ':'separado para ')+esc(bx?bx.name:'caixinha apagada'),(t.amount<0?'− ':'+ ')+fmt(Math.abs(t.amount)));});
+  if(d.man) h+=row('Ajuste manual',(d.man<0?'− ':'+ ')+fmt(Math.abs(d.man)));
+  h+=row('<b>Limite deste mês</b>','<b>'+fmt(d.limit)+'</b>','border-top:1px solid var(--line,#ddd);margin-top:4px;padding-top:4px');
+  h+='<div class="eyebrow" style="margin-top:12px">Gasto (soma de '+gl.length+' lançamento'+(gl.length===1?'':'s')+')</div>';
+  h+=gl.length?gl.slice(0,60).map(t=>row(t.date.slice(8,10)+'/'+t.date.slice(5,7)+' · '+esc(t.desc||''),fmt(t.amount))).join(''):'<div class="empty">Nenhum gasto nesta categoria no mês.</div>';
+  h+=row('<b>Total gasto</b>','<b>'+fmt(s.g)+'</b>','border-top:1px solid var(--line,#ddd);margin-top:4px;padding-top:4px')+'</div>';
+  if(trs.length) h+=`<button class="btn btn-ghost" style="margin-top:10px" onclick="closeModal();budgetUnmarkReturns('${id}')">Parar de descontar estas movimentações do limite</button>`;
+  if(d.man) h+=`<button class="btn btn-ghost" style="margin-top:8px" onclick="closeModal();budgetAdjReset('${id}')">Desfazer ajustes manuais deste mês</button>`;
+  openForm('Por que '+b.category+' está assim',[],()=>{},'Fechar','Mês '+monthLabel(m)+'. Aqui está a conta completa do limite e do gasto.');
+  ui.modal.extra=h; renderModal2();
+}
+function budgetUnmarkReturns(id){
+  const b=budgetsOf().find(x=>x.id===id); if(!b) return; const m=ui.month;
+  const trs=(state.transfers||[]).filter(t=>t.budgetId===b.id&&t.date.slice(0,7)===m);
+  askConfirm('Parar de descontar do limite de '+b.category+' as '+trs.length+' movimentação(ões) deste mês? O limite volta ao padrão '+fmtRaw(b.amount)+(budgetAdjDetail(b,m).man?' (mais o ajuste manual)':'')+'. O dinheiro das caixinhas não muda.',()=>{ trs.forEach(t=>{ delete t.budgetId; }); saveState(); render(); });
 }
 function budgetAdjReset(id){ const key=id+'|'+ui.month; if(state.budgetAdj&&state.budgetAdj[key]!==undefined){ delete state.budgetAdj[key]; saveState(); render(); } }
 function budgetBoxBlock(b,m,s){
