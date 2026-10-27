@@ -332,6 +332,10 @@
   #mainnav.nv-top,#mainnav.nv-bottom{overflow-x:auto;scrollbar-width:none;} #mainnav.nv-top::-webkit-scrollbar,#mainnav.nv-bottom::-webkit-scrollbar{display:none;}
   #mainnav button:not(.navgrip):not(.navtoggle){flex-shrink:1;min-width:0;}
   /* ===== Caixinhas ===== */
+  .cash-grid{display:flex;gap:18px 40px;flex-wrap:wrap;align-items:flex-end;}
+  .cash .k{font-size:13px;color:var(--muted);margin-bottom:6px;}
+  .cash .big{font-size:clamp(36px,8vw,54px);}
+  .cash .v{font-family:var(--serif);font-size:clamp(26px,6vw,38px);line-height:1.1;color:var(--brand-deep);letter-spacing:-.5px;}
   .boxline{display:flex;gap:6px 16px;flex-wrap:wrap;align-items:baseline;margin-top:10px;font-size:14px;}
   .boxline .muted{color:var(--muted);font-size:12.5px;}
   .bxs{display:flex;gap:12px;flex-wrap:wrap;} .bxs>.obtot{flex:1;min-width:150px;margin-top:14px;}
@@ -982,11 +986,11 @@ function widgetCategories(){
   const legend = legendRows.map(([n,v],i)=>`<div><span class="dot" style="background:${i<5?RAMP[i]:'#aab3ae'}"></span>${n}<span class="p">${pct(v/total)}%</span></div>`).join('');
   return `<div class="donut-wrap">${donutSvg(rows,total,170)}<div class="legend">${legend}</div></div>` + widgetCategoriesOld();
 }
-function resumoCard(){
+function resumoMesCard(){
   const cur = monthTotals(ui.month), prev = monthTotals(shiftMonth(ui.month,-1));
   const rows = expenseRows(), total = rows.reduce((s,r)=>s+r[1],0);
   if(!txInMonth().length){
-    return `<div class="card resumo"><div class="eyebrow">Seu mês</div><div class="big">${fmt(0)}</div><p class="lead">Ainda não há lançamentos em <b>${monthLabel(ui.month)}</b>. Adicione um lançamento ou importe seu extrato para ver o resumo.</p></div>`;
+    return `<div class="card resumo"><div class="eyebrow">Resumo do mês</div><p class="lead">Ainda não há lançamentos em <b>${monthLabel(ui.month)}</b>. Adicione um lançamento ou importe seu extrato para ver o resumo.</p></div>`;
   }
   let t = `Em <b>${monthLabel(ui.month)}</b> entraram <b>${fmt(cur.income)}</b> e saíram <b>${fmt(cur.expense)}</b>. `;
   if(cur.income>0){
@@ -999,15 +1003,12 @@ function resumoCard(){
   }
   const next = totalCommitmentForMonth(shiftMonth(ui.month,1));
   if(next>0) t += `O mês que vem já tem <b>${fmt(next)}</b> comprometidos em parcelas e contas.`;
-  return `<div class="card resumo">
-    <div class="eyebrow">Seu mês</div>
-    <div class="big ${cur.balance<0?'neg':''}">${fmt(cur.balance)}</div>
-    ${boxes().length?`<div class="boxline" onclick="setTab('caixinhas')" style="cursor:pointer"><span>Na conta corrente <b>${fmt(contaSaldo(ui.month))}</b></span><span class="muted">Nas caixinhas <b>${fmt(boxTotalAt(boxEnd(ui.month)))}</b></span></div>`:''}
-    <p class="lead">${t}</p>
-    <div class="kpis">
-      <div class="kpi"><div class="k">Entradas</div><div class="v">${fmt(cur.income)}</div></div>
-      <div class="kpi"><div class="k">Saídas</div><div class="v">${fmt(cur.expense)}</div></div>
-    </div></div>`;
+  return `<div class="card resumo"><div class="eyebrow">Resumo do mês</div><p class="lead" style="margin-top:6px">${t}</p></div>`;
+}
+// Tela inicial: só o dinheiro de verdade, conta corrente e poupança (caixinhas)
+function resumoCard(){
+  const conta=contaSaldo(ui.month), cx=boxTotalAt(boxEnd(ui.month)), temCx=boxes().length>0;
+  return `<div class="card resumo cash"><div class="eyebrow">Seu dinheiro</div><div class="cash-grid"><div class="cash-i"><div class="k">Na conta corrente</div><div class="big ${conta<0?'neg':''}">${fmt(conta)}</div></div>${temCx?`<div class="cash-i" role="button" tabindex="0" onclick="setTab('caixinhas')" onkeydown="if(event.key==='Enter')setTab('caixinhas')" style="cursor:pointer"><div class="k">Na poupança</div><div class="v">${fmt(cx)}</div></div>`:''}</div></div>`;
 }
 function ringSvg(p, size){
   const r=26, C=2*Math.PI*r, v=Math.max(0,Math.min(1,p));
@@ -1301,6 +1302,7 @@ function balancoView(){
   return monthNav()+`<div class="card resumo"><div class="eyebrow">Balanço de ${monthLabel(m)}</div><div class="big ${fim<0?'neg':''}">${fmt(fim)}</div>
     <p class="lead">É o saldo em que o mês deve <b>fechar</b>. Começou com <b>${fmt(si)}</b> <button class="chip" onclick="setSaldoInicial()">corrigir saldo inicial</button> <small style="color:var(--muted)">(calculado somando seus lançamentos anteriores; se não bater com o saldo real da conta, corrija)</small>. Devem entrar <b>${fmt(recP)}</b> no mês (o que já entrou ou a sua média dos últimos meses, o que for maior), já saiu <b>${fmt(cur.expense)}</b> e ainda deve sair <b>${fmt(fut)}</b>.</p>
     <div class="chips" style="margin:12px 0 0"><button class="chip" onclick="conciliarBanco()">Conciliar com o banco</button></div></div>
+    ${resumoMesCard()}
     ${ritmoCard()}
     <div class="card"><h2>Projeção do mês</h2>${cascata(steps)}
       <div class="kgrid"><div class="kpi"><div class="k">Entradas</div><div class="v">${fmt(cur.income)}</div>${dl(cur.income,prev.income)}</div><div class="kpi"><div class="k">Saídas</div><div class="v">${fmt(cur.expense)}</div>${dl(cur.expense,prev.expense)}</div><div class="kpi"><div class="k">Saldo do mês</div><div class="v">${fmt(cur.balance)}</div>${cur.income>0?`<div class="gsub">${pct(cur.balance/cur.income)}% da renda</div>`:''}</div><div class="kpi"><div class="k">Média por dia</div><div class="v">${fmt(cur.expense/Math.max(1,dias))}</div></div></div>
