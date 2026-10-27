@@ -997,9 +997,6 @@ function resumoMesCard(){
     return `<div class="card resumo"><div class="eyebrow">Resumo do mês</div><p class="lead">Ainda não há lançamentos em <b>${monthLabel(ui.month)}</b>. Adicione um lançamento ou importe seu extrato para ver o resumo.</p></div>`;
   }
   let t = `Em <b>${monthLabel(ui.month)}</b> entraram <b>${fmt(cur.income)}</b> e saíram <b>${fmt(cur.expense)}</b>. `;
-  if(cur.income>0){
-    t += cur.balance>=0 ? `Sobraram <b>${fmt(cur.balance)}</b>, ${pct(cur.balance/cur.income)}% do que entrou. ` : `Faltaram <b>${fmt(-cur.balance)}</b> para fechar o mês. `;
-  }
   if(rows.length) t += `Seu maior gasto é <b>${rows[0][0]}</b>, com ${pct(rows[0][1]/total)}% das saídas. `;
   if(prev.expense>0){
     const d = (cur.expense-prev.expense)/prev.expense;
@@ -1306,7 +1303,6 @@ function balancoView(){
   return monthNav()+`<div class="card resumo"><div class="eyebrow">Balanço de ${monthLabel(m)}</div><div class="big ${fim<0?'neg':''}">${fmt(fim)}</div>
     <p class="lead">É o saldo em que o mês deve <b>fechar</b>. Começou com <b>${fmt(si)}</b> <button class="chip" onclick="setSaldoInicial()">corrigir saldo inicial</button> <small style="color:var(--muted)">(calculado somando seus lançamentos anteriores; se não bater com o saldo real da conta, corrija)</small>. Devem entrar <b>${fmt(recP)}</b> no mês (o que já entrou ou a sua média dos últimos meses, o que for maior), já saiu <b>${fmt(cur.expense)}</b> e ainda deve sair <b>${fmt(fut)}</b>.</p>
     <div class="chips" style="margin:12px 0 0"><button class="chip" onclick="conciliarBanco()">Conciliar com o banco</button></div></div>
-    ${resumoMesCard()}
     ${ritmoCard()}
     <div class="card"><h2>Projeção do mês</h2>${cascata(steps)}
       <div class="kgrid"><div class="kpi"><div class="k">Entradas</div><div class="v">${fmt(cur.income)}</div>${dl(cur.income,prev.income)}</div><div class="kpi"><div class="k">Saídas</div><div class="v">${fmt(cur.expense)}</div>${dl(cur.expense,prev.expense)}</div><div class="kpi"><div class="k">Saldo do mês</div><div class="v">${fmt(cur.balance)}</div>${cur.income>0?`<div class="gsub">${pct(cur.balance/cur.income)}% da renda</div>`:''}</div><div class="kpi"><div class="k">Média por dia</div><div class="v">${fmt(cur.expense/Math.max(1,dias))}</div></div></div>
@@ -1673,7 +1669,7 @@ function navRows(){
 function dashboardView(){
   const order = state.dashboardPrefs.order;
   const widgets = { chart: widgetChart, categories: widgetCategories, categoriesIncome: widgetCategoriesIncome, commitments: widgetCommitments, projections: widgetProjections };
-  let html = monthNav() + resumoCard() + alertasCard() + chatCard() + metasCard();
+  let html = monthNav() + resumoCard() + resumoMesCard() + alertasCard() + chatCard() + metasCard();
   order.forEach((wid, idx)=>{
     const collapsed = !!state.dashboardPrefs.collapsed[wid];
     html += widgetShell(wid, idx, order.length, collapsed, widgets[wid] ? widgets[wid]() : '');
