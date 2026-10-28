@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261026-2">
+<meta name="cofre-version" content="20261028-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -45,7 +45,7 @@
     min-height:100vh;
     -webkit-font-smoothing:antialiased;
   }
-  .app{max-width:960px;margin:0 auto;padding:22px 18px 100px;}
+  .app{max-width:none;width:100%;margin:0;padding:22px clamp(14px,2.5vw,40px) 100px;}
   header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
   .brand{display:flex;align-items:center;gap:10px;}
   .brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(155deg,var(--brand),var(--brand-2));display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;}
@@ -136,7 +136,7 @@
     --serif:'Instrument Serif','Fraunces',serif;
   }
   body{background:var(--bg);}
-  .app{max-width:980px;padding-top:14px;}
+  .app{max-width:none;padding-top:14px;}
   header{position:sticky;top:10px;z-index:40;background:rgba(255,255,255,.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.9);border-radius:999px;padding:9px 10px 9px 24px;box-shadow:var(--shadow);margin-bottom:22px;}
   .wordmark{font-family:var(--serif);font-style:italic;font-size:34px;line-height:1;color:var(--brand);letter-spacing:-.5px;}
   header .sub{display:none;}
@@ -345,6 +345,61 @@
   .bxs{display:flex;gap:12px;flex-wrap:wrap;} .bxs>.obtot{flex:1;min-width:150px;margin-top:14px;}
   .bx-act{display:flex;gap:6px;flex-wrap:wrap;}
   .obc.done{border-color:#e7d29a;}
+  /* ===== Tela cheia + barra de abas (v2) ===== */
+  html,body{width:100%;}
+  /* Em cima / embaixo: barra fina, ícone e texto lado a lado */
+  #mainnav.nv-top,#mainnav.nv-bottom{padding:4px 6px;gap:2px;border-radius:22px;}
+  #mainnav.nv-top button:not(.navgrip):not(.navtoggle),#mainnav.nv-bottom button:not(.navgrip):not(.navtoggle){flex-direction:row;gap:6px;width:auto;height:36px;padding:0 12px;border-radius:16px;}
+  #mainnav.nv-top button span,#mainnav.nv-bottom button span{font-size:12px;white-space:nowrap;}
+  #mainnav.nv-top svg,#mainnav.nv-bottom svg{width:18px;height:18px;}
+  #mainnav.nv-top .navgrip,#mainnav.nv-bottom .navgrip,#mainnav.nv-top .navtoggle,#mainnav.nv-bottom .navtoggle{width:26px;height:26px;}
+  body[data-nav=top] .app{padding-top:64px;} body[data-nav=top] header{top:56px;}
+  body[data-nav=bottom] .app{padding-bottom:84px;}
+  @media (max-width:700px){
+    #mainnav.nv-top button span,#mainnav.nv-bottom button span{display:none;}
+    #mainnav.nv-top button:not(.navgrip):not(.navtoggle),#mainnav.nv-bottom button:not(.navgrip):not(.navtoggle){padding:0 10px;}
+  }
+  #mainnav.collapsed.nv-top .navtoggle,#mainnav.collapsed.nv-bottom .navtoggle{width:44px;height:44px;}
+  /* ===== Barra lateral larga (telas grandes) ===== */
+  .fl,.nvbrand,.nvlabel,.nvsum,.pagetitle{display:none;}
+  #mainnav .sh{display:inline;}
+  .reorder-controls{display:none;}
+  @media (min-width:900px){
+    #mainnav.nv-left:not(.collapsed),#mainnav.nv-right:not(.collapsed){top:12px;bottom:12px;transform:none;max-height:none;width:236px;padding:20px 12px 14px;gap:2px;align-items:stretch;justify-content:flex-start;border-radius:28px;overflow-y:auto;}
+    #mainnav.nv-left{left:12px;} #mainnav.nv-right{right:12px;}
+    #mainnav.nv-left:not(.collapsed) .navgrip,#mainnav.nv-right:not(.collapsed) .navgrip{position:absolute;top:16px;right:14px;}
+    #mainnav.nv-left:not(.collapsed) .nvbrand,#mainnav.nv-right:not(.collapsed) .nvbrand{display:block;font-family:var(--serif);font-style:italic;font-size:36px;line-height:1;color:var(--brand);padding:2px 12px 10px;}
+    #mainnav.nv-left:not(.collapsed) .nvlabel,#mainnav.nv-right:not(.collapsed) .nvlabel{display:block;font:600 10.5px 'Inter',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:16px 14px 6px;}
+    #mainnav.nv-left:not(.collapsed) button:not(.navgrip):not(.navtoggle),#mainnav.nv-right:not(.collapsed) button:not(.navgrip):not(.navtoggle){flex-direction:row;justify-content:flex-start;gap:12px;width:auto;height:44px;padding:0 14px;border-radius:14px;font-size:14px;font-weight:500;color:#3d4a44;flex:0 0 auto;}
+    #mainnav.nv-left:not(.collapsed) button:not(.navgrip):not(.navtoggle):hover,#mainnav.nv-right:not(.collapsed) button:not(.navgrip):not(.navtoggle):hover{background:rgba(11,77,61,.06);}
+    #mainnav.nv-left:not(.collapsed) button.active,#mainnav.nv-right:not(.collapsed) button.active{background:var(--brand-soft);color:var(--brand-deep);font-weight:700;box-shadow:inset 3px 0 0 var(--brand-deep);}
+    #mainnav.nv-left:not(.collapsed) .fl,#mainnav.nv-right:not(.collapsed) .fl{display:inline;font-size:14px;}
+    #mainnav.nv-left:not(.collapsed) .sh,#mainnav.nv-right:not(.collapsed) .sh{display:none;}
+    #mainnav.nv-left:not(.collapsed) .nvsum,#mainnav.nv-right:not(.collapsed) .nvsum{display:block;margin-top:auto;border-radius:22px;padding:16px 18px;color:#fff;background:linear-gradient(150deg,#0b4d3d,#042a1d);}
+    .nvsum small{display:block;opacity:.75;font-size:12px;} .nvsum b{display:block;font-family:var(--serif);font-weight:400;font-size:28px;margin-top:4px;}
+    #mainnav.nv-left:not(.collapsed) .navtoggle,#mainnav.nv-right:not(.collapsed) .navtoggle{align-self:center;margin-top:8px;}
+    #mainnav.collapsed.nv-left,#mainnav.collapsed.nv-right{top:50%;bottom:auto;transform:translateY(-50%);}
+    body[data-nav=left]:not(.navc) .app{padding-left:274px;} body[data-nav=right]:not(.navc) .app{padding-right:274px;}
+    body[data-nav=left]:not(.navc) .wordmark,body[data-nav=right]:not(.navc) .wordmark{display:none;}
+    body[data-nav=left]:not(.navc) .pagetitle,body[data-nav=right]:not(.navc) .pagetitle{display:inline;font-family:var(--serif);font-size:30px;color:var(--ink);}
+  }
+  /* ===== Painel em blocos ===== */
+  .dgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;align-items:start;}
+  .gb{grid-column:span var(--sp,12);min-width:0;position:relative;border-radius:26px;transition:opacity .15s;}
+  .gb>.card{margin:0;}
+  .gb.edit{outline:2px dashed rgba(11,77,61,.35);outline-offset:-2px;padding:46px 0 0;}
+  .gb.edit>.card{pointer-events:none;}
+  .gb.dragging{opacity:.45;}
+  .gb.drop-t{box-shadow:0 -7px 0 -1px var(--brand);} .gb.drop-b{box-shadow:0 7px 0 -1px var(--brand);}
+  .gb.drop-l{box-shadow:-7px 0 0 -1px var(--brand);} .gb.drop-r{box-shadow:7px 0 0 -1px var(--brand);}
+  .gb-off{opacity:.55;font-size:13.5px;padding:16px 20px;}
+  .gctl{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:6;display:flex;flex-wrap:wrap;gap:3px;max-width:calc(100% - 16px);background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:18px;padding:3px;box-shadow:0 6px 18px -6px rgba(4,42,29,.3);}
+  .gctl button{border:none;background:transparent;font:600 11.5px 'Inter',sans-serif;padding:6px 10px;border-radius:14px;cursor:pointer;color:var(--muted);}
+  .gctl button.on{background:var(--brand-deep);color:#fff;}
+  .gh{display:flex;align-items:center;padding:0 8px;cursor:grab;touch-action:none;color:var(--muted);}
+  .lay-bar{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin:0 0 12px;flex-wrap:wrap;}
+  .lay-hint{font-size:12.5px;color:var(--muted);margin-right:auto;}
+  @media (max-width:760px){ .gb{grid-column:1/-1;} .gctl button:not(.on){padding:6px 8px;} }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 </head>
@@ -888,18 +943,22 @@ function render(){
   const app = document.getElementById('app');
   app.innerHTML = `
     <header>
-      <div class="brand"><span class="wordmark">cofre</span></div>
+      <div class="brand"><span class="wordmark">cofre</span><span class="pagetitle">${PAGE_TITLES[ui.tab]||''}</span></div>
       <div style="display:flex;align-items:center">${alertBellHtml()}${syChipHtml()}<button class="hdr-cta" onclick="openTxModal()">Novo lançamento</button></div>
     </header>
     <nav id="mainnav" class="nv-${navPos()}${navCollapsed()?' collapsed':''}">${navCollapsed()?'':NAVGRIP}
+      <div class="nvbrand">cofre</div>
+      <div class="nvlabel">Menu</div>
       ${tabBtn('dashboard','Painel')}
       ${tabBtn('balanco','Balanço do mês')}
       ${tabBtn('orcamentos','Orçamentos')}
       ${tabBtn('caixinhas','Caixinhas')}
       ${tabBtn('lancamentos','Lançamentos')}
+      <div class="nvlabel">Geral</div>
       ${tabBtn('contas','Contas a pagar')}
       ${tabBtn('cartoes','Cartões & Parcelas')}
       ${tabBtn('categorias','Configurações')}
+      ${navSummary()}
       ${navToggleBtn()}
     </nav>
     <div id="content"></div>
@@ -1147,7 +1206,7 @@ function chatCard(){
 // ===== Navegação, projeção unificada, parcelas e plano de meta =====
 const NAVI={caixinhas:'<path d="M8 3h8M7 6h10"/><path d="M6 9a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3z"/><path d="M10 14h4"/>',dashboard:'<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',lancamentos:'<path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/>',contas:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',importar:'<path d="M12 3v12M12 15l-4-4M12 15l4-4M4 20h16"/>',cartoes:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/>',categorias:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>',balanco:'<path d="M5 20V10M12 20V4M19 20v-7"/>',orcamentos:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 15h2"/>'};
 function tabBtn(id,label){ const short={contas:'Contas',importar:'Importar',cartoes:'Cartões',lancamentos:'Lançar',dashboard:'Início',categorias:'Config.',balanco:'Balanço',orcamentos:'Orçam.',caixinhas:'Caixas'}[id]||label;
-  return `<button class="${ui.tab===id?'active':''}" onclick="setTab('${id}')" title="${label}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${NAVI[id]||''}</svg><span>${short}</span></button>`; }
+  return `<button class="${ui.tab===id?'active':''}" onclick="setTab('${id}')" title="${label}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${NAVI[id]||''}</svg><span class="sh">${short}</span><span class="fl">${label}</span></button>`; }
 function colHead(wid,title,extra){ const c=!!state.dashboardPrefs.collapsed[wid];
   return `<div class="card-head" onclick="toggleWidgetCollapse('${wid}')"><div class="card-head-left"><span style="color:var(--muted)">${c?icon('chevronDown'):icon('chevronUp')}</span><h2>${title}</h2></div><div onclick="event.stopPropagation()">${extra||''}</div></div>`; }
 function daysIn(m){ const [y,mo]=m.split('-').map(Number); return new Date(y,mo,0).getDate(); }
@@ -1666,7 +1725,65 @@ function navRows(){
   document.addEventListener('pointerup',end); document.addEventListener('pointercancel',end);
 })();
 
+
+// ===== Barra lateral: resumo e títulos =====
+const PAGE_TITLES={dashboard:'Painel',balanco:'Balanço do mês',orcamentos:'Orçamentos',caixinhas:'Caixinhas',lancamentos:'Lançamentos',contas:'Contas a pagar',cartoes:'Cartões & Parcelas',categorias:'Configurações',importar:'Importar'};
+function navSummary(){ if(navCollapsed()) return ''; let b=0; try{ b=monthTotals(ui.month).balance; }catch(_){}
+  return `<div class="nvsum"><small>Saldo de ${monthLabel(ui.month)}</small><b>${fmt(b)}</b></div>`; }
+
+// ===== Painel: blocos que você organiza (mover, redimensionar, ocultar) =====
+const BLOCK_DEF={resumo:{t:'Seu dinheiro',s:5},resumoMes:{t:'Resumo do mês',s:7},alertas:{t:'Alertas',s:12},chat:{t:'Converse com o Cofre',s:7},metas:{t:'Metas',s:5},chart:{t:'Entradas x Saídas',s:12},categories:{t:'Saídas por categoria',s:6},categoriesIncome:{t:'Entradas por categoria',s:6},commitments:{t:'Comprometido com parcelas',s:6},projections:{t:'Projeção dos próximos meses',s:6}};
+const BLOCK_ORDER=['resumo','resumoMes','alertas','chat','metas','chart','categories','categoriesIncome','commitments','projections'];
+function gbPrefs(){ const p=state.dashboardPrefs;
+  if(!Array.isArray(p.blocks)) p.blocks=['resumo','resumoMes','alertas','chat','metas'].concat(p.order||[]);
+  BLOCK_ORDER.forEach(k=>{ if(!p.blocks.includes(k)) p.blocks.push(k); });
+  p.blocks=p.blocks.filter((k,i)=>BLOCK_DEF[k]&&p.blocks.indexOf(k)===i);
+  p.span=p.span||{}; p.hidden=p.hidden||{}; return p; }
+function blockHtml(id){
+  const w={chart:widgetChart,categories:widgetCategories,categoriesIncome:widgetCategoriesIncome,commitments:widgetCommitments,projections:widgetProjections};
+  if(w[id]) return widgetShell(id,0,1,!!state.dashboardPrefs.collapsed[id],w[id]());
+  return ({resumo:resumoCard,resumoMes:resumoMesCard,alertas:alertasCard,chat:chatCard,metas:metasCard})[id]();
+}
+const GBSIZES=[[4,'⅓'],[6,'½'],[8,'⅔'],[12,'Total']];
+const GBGRIP='<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
+function gbCtl(id,span,hid){
+  return `<div class="gctl"><span class="gh" onpointerdown="gbDragStart(event,'${id}')" title="Arraste para mover">${GBGRIP}</span>${GBSIZES.map(([n,l])=>`<button class="${span===n?'on':''}" onclick="gbSize('${id}',${n})" title="Largura">${l}</button>`).join('')}<button onclick="${hid?'gbShow':'gbHide'}('${id}')">${hid?'Mostrar':'Ocultar'}</button></div>`; }
+function layoutBar(){ const ed=!!ui.editLayout;
+  return `<div class="lay-bar">${ed?`<span class="lay-hint">Arraste pelos pontinhos para mover, escolha a largura de cada bloco e oculte o que não quiser.</span><button class="chip" onclick="gbReset()">Restaurar padrão</button><button class="chip on" onclick="toggleLayoutEdit()">Concluir</button>`:`<button class="chip" onclick="toggleLayoutEdit()">Organizar blocos</button>`}</div>`; }
 function dashboardView(){
+  const p=gbPrefs(), ed=!!ui.editLayout; let items='';
+  p.blocks.forEach(id=>{
+    const hid=!!p.hidden[id];
+    if(hid&&!ed) return;
+    let inner;
+    if(hid) inner=`<div class="card gb-off"><span>${BLOCK_DEF[id].t} (oculto)</span></div>`;
+    else { inner=blockHtml(id); if(!inner||!String(inner).trim()) return; }
+    const span=Math.max(3,Math.min(12,p.span[id]||BLOCK_DEF[id].s));
+    items+=`<div class="gb${ed?' edit':''}" data-id="${id}" style="--sp:${span}">${ed?gbCtl(id,span,hid):''}${inner}</div>`;
+  });
+  return monthNav()+layoutBar()+`<div class="dgrid" id="dgrid">${items}</div>`;
+}
+function toggleLayoutEdit(){ ui.editLayout=!ui.editLayout; render(); }
+function gbSize(id,n){ gbPrefs().span[id]=n; saveState(); render(); }
+function gbHide(id){ gbPrefs().hidden[id]=true; saveState(); render(); }
+function gbShow(id){ delete gbPrefs().hidden[id]; saveState(); render(); }
+function gbReset(){ const p=state.dashboardPrefs; delete p.blocks; delete p.span; delete p.hidden; saveState(); render(); }
+let GB=null;
+function gbDragStart(e,id){ e.preventDefault(); const grid=document.getElementById('dgrid'); if(!grid) return; const el=grid.querySelector('.gb[data-id="'+id+'"]'); if(!el) return; GB={id,el,grid,target:null,pos:null}; el.classList.add('dragging'); }
+function gbClear(){ document.querySelectorAll('.gb.drop-t,.gb.drop-b,.gb.drop-l,.gb.drop-r').forEach(n=>n.classList.remove('drop-t','drop-b','drop-l','drop-r')); }
+document.addEventListener('pointermove',e=>{ if(!GB) return;
+  if(e.clientY<90) window.scrollBy(0,-14); else if(e.clientY>innerHeight-90) window.scrollBy(0,14);
+  const t=document.elementFromPoint(e.clientX,e.clientY); const over=t&&t.closest&&t.closest('.gb'); gbClear();
+  if(!over||over===GB.el||over.parentNode!==GB.grid){ GB.target=null; return; }
+  const r=over.getBoundingClientRect(), full=r.width>=GB.grid.getBoundingClientRect().width*.8;
+  const before=full?(e.clientY<r.top+r.height/2):(e.clientX<r.left+r.width/2);
+  GB.target=over.dataset.id; GB.pos=before?'before':'after';
+  over.classList.add(full?(before?'drop-t':'drop-b'):(before?'drop-l':'drop-r')); });
+function gbDragEnd(){ if(!GB) return; const g=GB; GB=null; gbClear(); g.el.classList.remove('dragging');
+  if(!g.target) return; const p=gbPrefs(); const b=p.blocks.filter(k=>k!==g.id); let i=b.indexOf(g.target); if(g.pos==='after') i++; b.splice(i,0,g.id); p.blocks=b; saveState(); render(); }
+document.addEventListener('pointerup',gbDragEnd); document.addEventListener('pointercancel',gbDragEnd);
+
+function dashboardViewV1(){
   const order = state.dashboardPrefs.order;
   const widgets = { chart: widgetChart, categories: widgetCategories, categoriesIncome: widgetCategoriesIncome, commitments: widgetCommitments, projections: widgetProjections };
   let html = monthNav() + resumoCard() + resumoMesCard() + alertasCard() + chatCard() + metasCard();
