@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261028-2">
+<meta name="cofre-version" content="20261028-3">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -1747,13 +1747,23 @@ function navSummary(){ if(navCollapsed()) return ''; let b=0; try{ b=monthTotals
 const COLS=48;
 const BLOCK_DEF={resumo:{t:'Seu dinheiro',o:20,c:20,col:false},resumoMes:{t:'Resumo do mês',o:28,c:28,col:false},alertas:{t:'Alertas',o:48,c:48,col:false},chat:{t:'Converse com o Cofre',o:48,c:24,col:true},metas:{t:'Metas',o:48,c:24,col:true},chart:{t:'Entradas x Saídas',o:48,c:24,col:true},categories:{t:'Saídas por categoria',o:48,c:24,col:true},categoriesIncome:{t:'Entradas por categoria',o:48,c:24,col:true},commitments:{t:'Comprometido com parcelas',o:24,c:24,col:true},projections:{t:'Projeção dos próximos meses',o:24,c:24,col:true}};
 const BLOCK_ORDER=['resumo','resumoMes','alertas','chat','metas','chart','categories','categoriesIncome','commitments','projections'];
-function gbPrefs(){ const p=state.dashboardPrefs;
-  if(!Array.isArray(p.blocks)) p.blocks=['resumo','resumoMes','alertas','chat','metas'].concat(p.order||[]);
-  BLOCK_ORDER.forEach(k=>{ if(!p.blocks.includes(k)) p.blocks.push(k); });
-  p.blocks=p.blocks.filter((k,i)=>BLOCK_DEF[k]&&p.blocks.indexOf(k)===i);
-  p.span=p.span||{}; p.hidden=p.hidden||{}; p.h=p.h||{}; p.stretch=p.stretch||{};
-  Object.keys(p.span).forEach(k=>{ if(typeof p.span[k]==='number') p.span[k]={o:p.span[k]*4,c:p.span[k]*4}; });
-  return p; }
+// orientação: no toque usa a posição real do aparelho (o teclado não conta); no computador, o formato da janela
+function gbCurOrient(){ try{ if(matchMedia('(pointer:coarse)').matches && screen.orientation && screen.orientation.type) return screen.orientation.type.indexOf('landscape')===0?'h':'v'; }catch(_){} return innerWidth>=innerHeight?'h':'v'; }
+function gbOrient(){ return ui.editOrient||gbCurOrient(); }
+function gbPrefs(){ const p=state.dashboardPrefs; p.layouts=p.layouts||{}; const o=gbOrient();
+  if(!p.layouts[o]){ const src=p.layouts[o==='h'?'v':'h']||p, L={};
+    ['blocks','span','hidden','h','stretch'].forEach(k=>{ if(src[k]!==undefined) L[k]=JSON.parse(JSON.stringify(src[k])); }); p.layouts[o]=L; }
+  const L=p.layouts[o];
+  if(!Array.isArray(L.blocks)) L.blocks=['resumo','resumoMes','alertas','chat','metas'].concat(p.order||[]);
+  BLOCK_ORDER.forEach(k=>{ if(!L.blocks.includes(k)) L.blocks.push(k); });
+  L.blocks=L.blocks.filter((k,i)=>BLOCK_DEF[k]&&L.blocks.indexOf(k)===i);
+  L.span=L.span||{}; L.hidden=L.hidden||{}; L.h=L.h||{}; L.stretch=L.stretch||{};
+  Object.keys(L.span).forEach(k=>{ if(typeof L.span[k]==='number') L.span[k]={o:L.span[k]*4,c:L.span[k]*4}; });
+  return L; }
+let _gbLastOr=gbCurOrient();
+function gbOrientCheck(){ const o=gbCurOrient(); if(o===_gbLastOr) return; _gbLastOr=o; const a=document.activeElement; if(ui.editLayout||(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return; if(ui.tab==='dashboard') render(); }
+window.addEventListener('resize',()=>{ clearTimeout(gbOrientCheck._t); gbOrientCheck._t=setTimeout(gbOrientCheck,200); });
+window.addEventListener('orientationchange',()=>{ clearTimeout(gbOrientCheck._t); gbOrientCheck._t=setTimeout(gbOrientCheck,300); });
 function gbIsClosed(id){ return BLOCK_DEF[id].col && !!state.dashboardPrefs.collapsed[id]; }
 function gbSpan(id,st){ const p=gbPrefs(), d=BLOCK_DEF[id], k=(d.col&&st==='c')?'c':'o', v=p.span[id];
   const n=(v&&typeof v==='object'&&v[k])||d[k]; return Math.max(10,Math.min(COLS,Math.round(n))); }
@@ -1771,7 +1781,8 @@ function gbCtl(id,span,hid,hset,openLike){ const p=gbPrefs();
   return `<div class="gctl"><span class="gh" onpointerdown="gbDragStart(event,'${id}')" title="Arraste para mudar de lugar">${GBGRIP}</span><span class="gw">${Math.round(span/COLS*100)}%</span><button class="${p.stretch[id]?'on':''}" onclick="gbStretch('${id}')" title="Faz o bloco acompanhar a altura do vizinho da mesma linha">Esticar</button>${hset&&openLike?`<button onclick="gbAutoH('${id}')" title="Volta a altura automática">Altura auto</button>`:''}<button onclick="${hid?'gbShow':'gbHide'}('${id}')">${hid?'Mostrar':'Ocultar'}</button></div>`; }
 function layoutBar(){ const m=ui.editLayout;
   if(!m) return `<div class="lay-bar"><button class="chip" onclick="toggleLayoutEdit()">Organizar blocos</button></div>`;
-  return `<div class="lay-bar"><div class="lay-seg"><button class="${m==='o'?'on':''}" onclick="setLayoutMode('o')">Blocos abertos</button><button class="${m==='c'?'on':''}" onclick="setLayoutMode('c')">Blocos fechados</button></div><span class="lay-hint">${m==='o'?'Editando como ficam com os blocos abertos.':'Editando como ficam com os blocos fechados (vale para os que recolhem).'} Puxe o cantinho para mudar o tamanho e arraste pelos pontinhos para mudar de lugar.</span><button class="chip" onclick="gbReset()">Restaurar padrão</button><button class="chip on" onclick="toggleLayoutEdit()">Concluir</button></div>`; }
+  const or=gbOrient(), real=gbCurOrient();
+  return `<div class="lay-bar"><div class="lay-seg"><button class="${or==='h'?'on':''}" onclick="setLayoutOrient('h')">Tela horizontal</button><button class="${or==='v'?'on':''}" onclick="setLayoutOrient('v')">Tela vertical</button></div><div class="lay-seg"><button class="${m==='o'?'on':''}" onclick="setLayoutMode('o')">Blocos abertos</button><button class="${m==='c'?'on':''}" onclick="setLayoutMode('c')">Blocos fechados</button></div><span class="lay-hint">Editando o layout da tela ${or==='h'?'na horizontal':'na vertical'}, com os blocos ${m==='o'?'abertos':'fechados (vale para os que recolhem)'}.${or!==real?' Gire o aparelho para ver ao vivo.':''} Puxe o cantinho para mudar o tamanho e arraste pelos pontinhos para mudar de lugar.</span><button class="chip" onclick="gbReset()">Restaurar padrão</button><button class="chip on" onclick="toggleLayoutEdit()">Concluir</button></div>`; }
 function dashboardView(){
   const p=gbPrefs(), mode=ui.editLayout||null; let items='';
   p.blocks.forEach(id=>{
@@ -1786,13 +1797,14 @@ function dashboardView(){
   });
   return monthNav()+layoutBar()+`<div class="dgrid" id="dgrid">${items}</div>`;
 }
-function toggleLayoutEdit(){ ui.editLayout=ui.editLayout?null:'o'; render(); }
+function toggleLayoutEdit(){ if(ui.editLayout){ ui.editLayout=null; ui.editOrient=null; } else { ui.editLayout='o'; ui.editOrient=gbCurOrient(); } render(); }
+function setLayoutOrient(o){ ui.editOrient=o; render(); }
 function setLayoutMode(m){ ui.editLayout=m; render(); }
 function gbHide(id){ gbPrefs().hidden[id]=true; saveState(); render(); }
 function gbShow(id){ delete gbPrefs().hidden[id]; saveState(); render(); }
 function gbStretch(id){ const p=gbPrefs(); if(p.stretch[id]) delete p.stretch[id]; else p.stretch[id]=true; saveState(); render(); }
 function gbAutoH(id){ delete gbPrefs().h[id]; saveState(); render(); }
-function gbReset(){ const p=state.dashboardPrefs; delete p.blocks; delete p.span; delete p.hidden; delete p.h; delete p.stretch; saveState(); render(); }
+function gbReset(){ const p=state.dashboardPrefs; p.layouts=p.layouts||{}; p.layouts[gbOrient()]={}; saveState(); render(); }
 // --- puxar o cantinho: largura (e altura, nos blocos abertos) livres
 let GR=null;
 function gbResizeStart(e,id,st){ e.preventDefault(); e.stopPropagation(); const grid=document.getElementById('dgrid'); if(!grid) return;
