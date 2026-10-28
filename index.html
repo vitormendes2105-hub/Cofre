@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261028-1">
+<meta name="cofre-version" content="20261028-2">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -384,22 +384,34 @@
     body[data-nav=left]:not(.navc) .pagetitle,body[data-nav=right]:not(.navc) .pagetitle{display:inline;font-family:var(--serif);font-size:30px;color:var(--ink);}
   }
   /* ===== Painel em blocos ===== */
-  .dgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;align-items:start;}
-  .gb{grid-column:span var(--sp,12);min-width:0;position:relative;border-radius:26px;transition:opacity .15s;}
+  .dgrid{display:grid;grid-template-columns:repeat(48,minmax(0,1fr));grid-auto-flow:row dense;gap:0;align-items:start;margin:0 -7px;}
+  .gb{grid-column:span var(--sp,48);min-width:0;position:relative;border-radius:30px;padding:7px;container-type:inline-size;}
   .gb>.card{margin:0;}
-  .gb.edit{outline:2px dashed rgba(11,77,61,.35);outline-offset:-2px;padding:46px 0 0;}
+  .gb.stretch{align-self:stretch;} .gb.stretch>.card{height:100%;}
+  .gb.hset>.card{height:var(--h);overflow:auto;}
+  .gb.edit{outline:2px dashed rgba(11,77,61,.35);outline-offset:-4px;padding-top:54px;}
   .gb.edit>.card{pointer-events:none;}
-  .gb.dragging{opacity:.45;}
-  .gb.drop-t{box-shadow:0 -7px 0 -1px var(--brand);} .gb.drop-b{box-shadow:0 7px 0 -1px var(--brand);}
-  .gb.drop-l{box-shadow:-7px 0 0 -1px var(--brand);} .gb.drop-r{box-shadow:7px 0 0 -1px var(--brand);}
+  .gb.dragging{opacity:.45;} .gb.resizing{outline-color:var(--brand);}
+  .gb.drop-t{box-shadow:0 -6px 0 -1px var(--brand);} .gb.drop-b{box-shadow:0 6px 0 -1px var(--brand);}
+  .gb.drop-l{box-shadow:-6px 0 0 -1px var(--brand);} .gb.drop-r{box-shadow:6px 0 0 -1px var(--brand);}
   .gb-off{opacity:.55;font-size:13.5px;padding:16px 20px;}
-  .gctl{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:6;display:flex;flex-wrap:wrap;gap:3px;max-width:calc(100% - 16px);background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:18px;padding:3px;box-shadow:0 6px 18px -6px rgba(4,42,29,.3);}
+  .gctl{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:6;display:flex;flex-wrap:wrap;justify-content:center;gap:3px;max-width:calc(100% - 20px);background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:18px;padding:3px;box-shadow:0 6px 18px -6px rgba(4,42,29,.3);}
   .gctl button{border:none;background:transparent;font:600 11.5px 'Inter',sans-serif;padding:6px 10px;border-radius:14px;cursor:pointer;color:var(--muted);}
   .gctl button.on{background:var(--brand-deep);color:#fff;}
+  .gw{display:flex;align-items:center;font:700 11.5px 'Inter',sans-serif;color:var(--brand-deep);padding:0 8px;}
   .gh{display:flex;align-items:center;padding:0 8px;cursor:grab;touch-action:none;color:var(--muted);}
+  .gresize{position:absolute;right:12px;bottom:12px;width:26px;height:26px;z-index:7;cursor:nwse-resize;touch-action:none;border-radius:8px;background:var(--brand-deep);opacity:.9;box-shadow:0 4px 10px rgba(4,42,29,.35);}
+  .gresize::after{content:"";position:absolute;right:5px;bottom:5px;width:11px;height:11px;border-right:2.5px solid #fff;border-bottom:2.5px solid #fff;border-radius:0 0 3px 0;}
   .lay-bar{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin:0 0 12px;flex-wrap:wrap;}
-  .lay-hint{font-size:12.5px;color:var(--muted);margin-right:auto;}
-  @media (max-width:760px){ .gb{grid-column:1/-1;} .gctl button:not(.on){padding:6px 8px;} }
+  .lay-hint{font-size:12.5px;color:var(--muted);flex:1 1 260px;}
+  .lay-seg{display:inline-flex;background:rgba(255,255,255,.9);border:1px solid var(--border);border-radius:999px;padding:3px;}
+  .lay-seg button{border:none;background:transparent;font:600 12.5px 'Inter',sans-serif;padding:8px 14px;border-radius:999px;cursor:pointer;color:var(--muted);}
+  .lay-seg button.on{background:var(--brand-deep);color:#fff;}
+  /* o conteúdo do bloco se adapta à largura que você der a ele */
+  .gb .resumo .big{font-size:clamp(30px,11cqw,68px);}
+  @container (max-width:470px){ .gb>.card{padding:18px;} .gb .resumo{padding:20px 18px;} .gb .resumo .lead{font-size:14px;line-height:1.55;} .cash-grid{gap:12px 24px;} }
+  @container (max-width:330px){ .gb>.card{padding:14px;} .gb .card h2{font-size:19px;} }
+  @media (max-width:760px){ .gb{grid-column:1/-1;} .gctl button{padding:6px 8px;} }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 </head>
@@ -1731,43 +1743,73 @@ const PAGE_TITLES={dashboard:'Painel',balanco:'Balanço do mês',orcamentos:'Or�
 function navSummary(){ if(navCollapsed()) return ''; let b=0; try{ b=monthTotals(ui.month).balance; }catch(_){}
   return `<div class="nvsum"><small>Saldo de ${monthLabel(ui.month)}</small><b>${fmt(b)}</b></div>`; }
 
-// ===== Painel: blocos que você organiza (mover, redimensionar, ocultar) =====
-const BLOCK_DEF={resumo:{t:'Seu dinheiro',s:5},resumoMes:{t:'Resumo do mês',s:7},alertas:{t:'Alertas',s:12},chat:{t:'Converse com o Cofre',s:7},metas:{t:'Metas',s:5},chart:{t:'Entradas x Saídas',s:12},categories:{t:'Saídas por categoria',s:6},categoriesIncome:{t:'Entradas por categoria',s:6},commitments:{t:'Comprometido com parcelas',s:6},projections:{t:'Projeção dos próximos meses',s:6}};
+// ===== Painel: blocos que você organiza (mover, puxar o cantinho, layouts separados p/ aberto e fechado) =====
+const COLS=48;
+const BLOCK_DEF={resumo:{t:'Seu dinheiro',o:20,c:20,col:false},resumoMes:{t:'Resumo do mês',o:28,c:28,col:false},alertas:{t:'Alertas',o:48,c:48,col:false},chat:{t:'Converse com o Cofre',o:48,c:24,col:true},metas:{t:'Metas',o:48,c:24,col:true},chart:{t:'Entradas x Saídas',o:48,c:24,col:true},categories:{t:'Saídas por categoria',o:48,c:24,col:true},categoriesIncome:{t:'Entradas por categoria',o:48,c:24,col:true},commitments:{t:'Comprometido com parcelas',o:24,c:24,col:true},projections:{t:'Projeção dos próximos meses',o:24,c:24,col:true}};
 const BLOCK_ORDER=['resumo','resumoMes','alertas','chat','metas','chart','categories','categoriesIncome','commitments','projections'];
 function gbPrefs(){ const p=state.dashboardPrefs;
   if(!Array.isArray(p.blocks)) p.blocks=['resumo','resumoMes','alertas','chat','metas'].concat(p.order||[]);
   BLOCK_ORDER.forEach(k=>{ if(!p.blocks.includes(k)) p.blocks.push(k); });
   p.blocks=p.blocks.filter((k,i)=>BLOCK_DEF[k]&&p.blocks.indexOf(k)===i);
-  p.span=p.span||{}; p.hidden=p.hidden||{}; return p; }
-function blockHtml(id){
-  const w={chart:widgetChart,categories:widgetCategories,categoriesIncome:widgetCategoriesIncome,commitments:widgetCommitments,projections:widgetProjections};
-  if(w[id]) return widgetShell(id,0,1,!!state.dashboardPrefs.collapsed[id],w[id]());
-  return ({resumo:resumoCard,resumoMes:resumoMesCard,alertas:alertasCard,chat:chatCard,metas:metasCard})[id]();
+  p.span=p.span||{}; p.hidden=p.hidden||{}; p.h=p.h||{}; p.stretch=p.stretch||{};
+  Object.keys(p.span).forEach(k=>{ if(typeof p.span[k]==='number') p.span[k]={o:p.span[k]*4,c:p.span[k]*4}; });
+  return p; }
+function gbIsClosed(id){ return BLOCK_DEF[id].col && !!state.dashboardPrefs.collapsed[id]; }
+function gbSpan(id,st){ const p=gbPrefs(), d=BLOCK_DEF[id], k=(d.col&&st==='c')?'c':'o', v=p.span[id];
+  const n=(v&&typeof v==='object'&&v[k])||d[k]; return Math.max(10,Math.min(COLS,Math.round(n))); }
+function blockHtml(id,force){
+  const p=state.dashboardPrefs, d=BLOCK_DEF[id]; let had=false,old;
+  if(force&&d.col){ had=Object.prototype.hasOwnProperty.call(p.collapsed,id); old=p.collapsed[id]; p.collapsed[id]=(force==='c'); }
+  try{
+    const w={chart:widgetChart,categories:widgetCategories,categoriesIncome:widgetCategoriesIncome,commitments:widgetCommitments,projections:widgetProjections};
+    if(w[id]) return widgetShell(id,0,1,!!p.collapsed[id],w[id]());
+    return ({resumo:resumoCard,resumoMes:resumoMesCard,alertas:alertasCard,chat:chatCard,metas:metasCard})[id]();
+  } finally { if(force&&d.col){ if(had) p.collapsed[id]=old; else delete p.collapsed[id]; } }
 }
-const GBSIZES=[[4,'⅓'],[6,'½'],[8,'⅔'],[12,'Total']];
 const GBGRIP='<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
-function gbCtl(id,span,hid){
-  return `<div class="gctl"><span class="gh" onpointerdown="gbDragStart(event,'${id}')" title="Arraste para mover">${GBGRIP}</span>${GBSIZES.map(([n,l])=>`<button class="${span===n?'on':''}" onclick="gbSize('${id}',${n})" title="Largura">${l}</button>`).join('')}<button onclick="${hid?'gbShow':'gbHide'}('${id}')">${hid?'Mostrar':'Ocultar'}</button></div>`; }
-function layoutBar(){ const ed=!!ui.editLayout;
-  return `<div class="lay-bar">${ed?`<span class="lay-hint">Arraste pelos pontinhos para mover, escolha a largura de cada bloco e oculte o que não quiser.</span><button class="chip" onclick="gbReset()">Restaurar padrão</button><button class="chip on" onclick="toggleLayoutEdit()">Concluir</button>`:`<button class="chip" onclick="toggleLayoutEdit()">Organizar blocos</button>`}</div>`; }
+function gbCtl(id,span,hid,hset,openLike){ const p=gbPrefs();
+  return `<div class="gctl"><span class="gh" onpointerdown="gbDragStart(event,'${id}')" title="Arraste para mudar de lugar">${GBGRIP}</span><span class="gw">${Math.round(span/COLS*100)}%</span><button class="${p.stretch[id]?'on':''}" onclick="gbStretch('${id}')" title="Faz o bloco acompanhar a altura do vizinho da mesma linha">Esticar</button>${hset&&openLike?`<button onclick="gbAutoH('${id}')" title="Volta a altura automática">Altura auto</button>`:''}<button onclick="${hid?'gbShow':'gbHide'}('${id}')">${hid?'Mostrar':'Ocultar'}</button></div>`; }
+function layoutBar(){ const m=ui.editLayout;
+  if(!m) return `<div class="lay-bar"><button class="chip" onclick="toggleLayoutEdit()">Organizar blocos</button></div>`;
+  return `<div class="lay-bar"><div class="lay-seg"><button class="${m==='o'?'on':''}" onclick="setLayoutMode('o')">Blocos abertos</button><button class="${m==='c'?'on':''}" onclick="setLayoutMode('c')">Blocos fechados</button></div><span class="lay-hint">${m==='o'?'Editando como ficam com os blocos abertos.':'Editando como ficam com os blocos fechados (vale para os que recolhem).'} Puxe o cantinho para mudar o tamanho e arraste pelos pontinhos para mudar de lugar.</span><button class="chip" onclick="gbReset()">Restaurar padrão</button><button class="chip on" onclick="toggleLayoutEdit()">Concluir</button></div>`; }
 function dashboardView(){
-  const p=gbPrefs(), ed=!!ui.editLayout; let items='';
+  const p=gbPrefs(), mode=ui.editLayout||null; let items='';
   p.blocks.forEach(id=>{
-    const hid=!!p.hidden[id];
-    if(hid&&!ed) return;
+    const hid=!!p.hidden[id]; if(hid&&!mode) return;
+    const d=BLOCK_DEF[id], st=mode?mode:(gbIsClosed(id)?'c':'o'), openLike=!d.col||st==='o';
     let inner;
-    if(hid) inner=`<div class="card gb-off"><span>${BLOCK_DEF[id].t} (oculto)</span></div>`;
-    else { inner=blockHtml(id); if(!inner||!String(inner).trim()) return; }
-    const span=Math.max(3,Math.min(12,p.span[id]||BLOCK_DEF[id].s));
-    items+=`<div class="gb${ed?' edit':''}" data-id="${id}" style="--sp:${span}">${ed?gbCtl(id,span,hid):''}${inner}</div>`;
+    if(hid) inner=`<div class="card gb-off"><span>${d.t} (oculto)</span></div>`;
+    else { inner=blockHtml(id,mode||undefined); if(!inner||!String(inner).trim()) return; }
+    const span=gbSpan(id,st), h=(!hid&&openLike&&p.h[id])?p.h[id]:0;
+    const cls='gb'+(mode?' edit':'')+(h?' hset':'')+(p.stretch[id]?' stretch':'');
+    items+=`<div class="${cls}" data-id="${id}" style="--sp:${span};${h?`--h:${h}px`:''}">${mode?gbCtl(id,span,hid,!!h,openLike):''}${inner}${mode&&!hid?`<span class="gresize" onpointerdown="gbResizeStart(event,'${id}','${st}')" title="Puxe para mudar o tamanho"></span>`:''}</div>`;
   });
   return monthNav()+layoutBar()+`<div class="dgrid" id="dgrid">${items}</div>`;
 }
-function toggleLayoutEdit(){ ui.editLayout=!ui.editLayout; render(); }
-function gbSize(id,n){ gbPrefs().span[id]=n; saveState(); render(); }
+function toggleLayoutEdit(){ ui.editLayout=ui.editLayout?null:'o'; render(); }
+function setLayoutMode(m){ ui.editLayout=m; render(); }
 function gbHide(id){ gbPrefs().hidden[id]=true; saveState(); render(); }
 function gbShow(id){ delete gbPrefs().hidden[id]; saveState(); render(); }
-function gbReset(){ const p=state.dashboardPrefs; delete p.blocks; delete p.span; delete p.hidden; saveState(); render(); }
+function gbStretch(id){ const p=gbPrefs(); if(p.stretch[id]) delete p.stretch[id]; else p.stretch[id]=true; saveState(); render(); }
+function gbAutoH(id){ delete gbPrefs().h[id]; saveState(); render(); }
+function gbReset(){ const p=state.dashboardPrefs; delete p.blocks; delete p.span; delete p.hidden; delete p.h; delete p.stretch; saveState(); render(); }
+// --- puxar o cantinho: largura (e altura, nos blocos abertos) livres
+let GR=null;
+function gbResizeStart(e,id,st){ e.preventDefault(); e.stopPropagation(); const grid=document.getElementById('dgrid'); if(!grid) return;
+  const el=grid.querySelector('.gb[data-id="'+id+'"]'); if(!el) return; const card=el.querySelector(':scope>.card'); const d=BLOCK_DEF[id];
+  GR={id,st,el,card,unit:grid.clientWidth/COLS,sx:e.clientX,sy:e.clientY,w:el.getBoundingClientRect().width,ch:card?card.getBoundingClientRect().height:0,span:gbSpan(id,st),h:null,openLike:(!d.col||st==='o')};
+  el.classList.add('resizing'); document.body.style.userSelect='none'; }
+document.addEventListener('pointermove',e=>{ if(!GR) return;
+  let n=Math.round((GR.w+(e.clientX-GR.sx))/GR.unit); n=Math.max(10,Math.min(COLS,n));
+  [12,16,24,32,36,48].forEach(v=>{ if(Math.abs(n-v)<=1) n=v; });
+  if(n!==GR.span){ GR.span=n; GR.el.style.setProperty('--sp',n); const g=GR.el.querySelector('.gw'); if(g) g.textContent=Math.round(n/COLS*100)+'%'; }
+  if(GR.openLike&&GR.card&&Math.abs(e.clientY-GR.sy)>6){ const nh=Math.max(90,Math.round(GR.ch+(e.clientY-GR.sy))); GR.h=nh; GR.el.classList.add('hset'); GR.el.style.setProperty('--h',nh+'px'); }
+  if(e.clientY<90) window.scrollBy(0,-12); else if(e.clientY>innerHeight-90) window.scrollBy(0,12); });
+function gbResizeEnd(){ if(!GR) return; const g=GR; GR=null; document.body.style.userSelect=''; g.el.classList.remove('resizing');
+  const p=gbPrefs(), d=BLOCK_DEF[g.id], k=(d.col&&g.st==='c')?'c':'o'; const v=(p.span[g.id]&&typeof p.span[g.id]==='object')?p.span[g.id]:{}; v[k]=g.span; p.span[g.id]=v;
+  if(g.h!=null) p.h[g.id]=g.h; saveState(); render(); }
+document.addEventListener('pointerup',gbResizeEnd); document.addEventListener('pointercancel',gbResizeEnd);
+// --- arrastar pelos pontinhos: mudar de lugar
 let GB=null;
 function gbDragStart(e,id){ e.preventDefault(); const grid=document.getElementById('dgrid'); if(!grid) return; const el=grid.querySelector('.gb[data-id="'+id+'"]'); if(!el) return; GB={id,el,grid,target:null,pos:null}; el.classList.add('dragging'); }
 function gbClear(){ document.querySelectorAll('.gb.drop-t,.gb.drop-b,.gb.drop-l,.gb.drop-r').forEach(n=>n.classList.remove('drop-t','drop-b','drop-l','drop-r')); }
