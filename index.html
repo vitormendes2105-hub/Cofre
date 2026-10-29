@@ -120,10 +120,6 @@
   .tabs-sub{display:flex;gap:6px;margin-bottom:14px;}
   .tabs-sub button{font-size:12px;padding:6px 13px;border-radius:16px;border:1px solid var(--border);background:#fff;cursor:pointer;}
   .tabs-sub button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
-  .reorder-controls{display:flex;flex-direction:column;gap:2px;}
-  .reorder-controls button{background:none;border:none;cursor:pointer;color:var(--muted);padding:1px;}
-  .reorder-controls button:hover{color:var(--ink);}
-  .reorder-controls button:disabled{opacity:.25;cursor:default;}
   .checkbox-row input[type=checkbox]{width:auto;}
 
   /* ===== Tema Auro: creme, verde-floresta, dourado ===== */
@@ -363,7 +359,6 @@
   /* ===== Barra lateral larga (telas grandes) ===== */
   .fl,.nvbrand,.nvlabel,.nvsum,.pagetitle{display:none;}
   #mainnav .sh{display:inline;}
-  .reorder-controls{display:none;}
   @media (min-width:900px){
     #mainnav.nv-left:not(.collapsed),#mainnav.nv-right:not(.collapsed){top:12px;bottom:12px;transform:none;max-height:none;width:236px;padding:20px 12px 14px;gap:2px;align-items:stretch;justify-content:flex-start;border-radius:28px;overflow-y:auto;}
     #mainnav.nv-left{left:12px;} #mainnav.nv-right{right:12px;}
@@ -386,22 +381,29 @@
   /* ===== Painel em blocos ===== */
   .dgrid{display:grid;grid-template-columns:repeat(48,minmax(0,1fr));grid-auto-flow:row dense;gap:0;align-items:start;margin:0 -7px;}
   .gb{grid-column:span var(--sp,48);min-width:0;position:relative;border-radius:30px;padding:7px;container-type:inline-size;}
-  .gb>.card{margin:0;}
-  .gb.stretch{align-self:stretch;} .gb.stretch>.card{height:100%;}
-  .gb.hset>.card{height:var(--h);overflow:auto;}
-  .gb.edit{outline:2px dashed rgba(11,77,61,.35);outline-offset:-4px;padding-top:54px;}
-  .gb.edit>.card{pointer-events:none;}
+  .gb>:not(.gctl):not(.gresize){margin:0;}
+  .gb.stretch{align-self:stretch;} .gb.stretch>:not(.gctl):not(.gresize){height:100%;}
+  .gb.hset>:not(.gctl):not(.gresize){height:var(--h);overflow:auto;}
+  .gb.edit{outline:2px dashed rgba(11,77,61,.35);outline-offset:-4px;}
+  .gb.edit>:not(.gctl):not(.gresize){pointer-events:none;}
+  .gb.edit>.gctl+*{margin-top:8px;}
   .gb.dragging{opacity:.45;} .gb.resizing{outline-color:var(--brand);}
   .gb.drop-t{box-shadow:0 -6px 0 -1px var(--brand);} .gb.drop-b{box-shadow:0 6px 0 -1px var(--brand);}
   .gb.drop-l{box-shadow:-6px 0 0 -1px var(--brand);} .gb.drop-r{box-shadow:6px 0 0 -1px var(--brand);}
   .gb-off{opacity:.55;font-size:13.5px;padding:16px 20px;}
-  .gctl{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:6;display:flex;flex-wrap:wrap;justify-content:center;gap:3px;max-width:calc(100% - 20px);background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:18px;padding:3px;box-shadow:0 6px 18px -6px rgba(4,42,29,.3);}
+  .gctl{position:relative;z-index:6;display:flex;flex-wrap:wrap;justify-content:center;gap:3px;width:max-content;max-width:calc(100% - 8px);margin:2px auto 0;background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:18px;padding:3px;box-shadow:0 6px 18px -6px rgba(4,42,29,.3);}
   .gctl button{border:none;background:transparent;font:600 11.5px 'Inter',sans-serif;padding:6px 10px;border-radius:14px;cursor:pointer;color:var(--muted);}
   .gctl button.on{background:var(--brand-deep);color:#fff;}
   .gw{display:flex;align-items:center;font:700 11.5px 'Inter',sans-serif;color:var(--brand-deep);padding:0 8px;}
   .gh{display:flex;align-items:center;padding:0 8px;cursor:grab;touch-action:none;color:var(--muted);}
   .gresize{position:absolute;right:12px;bottom:12px;width:26px;height:26px;z-index:7;cursor:nwse-resize;touch-action:none;border-radius:8px;background:var(--brand-deep);opacity:.9;box-shadow:0 4px 10px rgba(4,42,29,.35);}
   .gresize::after{content:"";position:absolute;right:5px;bottom:5px;width:11px;height:11px;border-right:2.5px solid #fff;border-bottom:2.5px solid #fff;border-radius:0 0 3px 0;}
+  .tol-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:14px;margin-bottom:6px;background:rgba(255,255,255,.7);}
+  .tol-row.dragging{opacity:.45;} .tol-row.drop-t{box-shadow:0 -4px 0 -1px var(--brand);} .tol-row.drop-b{box-shadow:0 4px 0 -1px var(--brand);}
+  .tol-grip{display:flex;align-items:center;padding:6px;cursor:grab;touch-action:none;color:var(--muted);}
+  .tol-name{flex:1;font-weight:600;} .tol-btns{display:flex;gap:2px;}
+  .tol-btns button{background:none;border:none;cursor:pointer;color:var(--muted);padding:6px;border-radius:10px;} .tol-btns button:hover{color:var(--ink);} .tol-btns button:disabled{opacity:.25;cursor:default;}
+  .tol-sep{font:700 11px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:10px 2px 6px;}
   .lay-bar{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin:0 0 12px;flex-wrap:wrap;}
   .lay-hint{font-size:12.5px;color:var(--muted);flex:1 1 260px;}
   .lay-seg{display:inline-flex;background:rgba(255,255,255,.9);border:1px solid var(--border);border-radius:999px;padding:3px;}
@@ -411,7 +413,8 @@
   .gb .resumo .big{font-size:clamp(30px,11cqw,68px);}
   @container (max-width:470px){ .gb>.card{padding:18px;} .gb .resumo{padding:20px 18px;} .gb .resumo .lead{font-size:14px;line-height:1.55;} .cash-grid{gap:12px 24px;} }
   @container (max-width:330px){ .gb>.card{padding:14px;} .gb .card h2{font-size:19px;} }
-  @media (max-width:760px){ .gb{grid-column:1/-1;} .gctl button{padding:6px 8px;} }
+  @container (max-width:250px){ .gb>.card{padding:11px;border-radius:20px;} .gb .card h2{font-size:16px;} .gb .resumo .big{font-size:clamp(22px,11cqw,34px);} .gb .resumo .lead{font-size:12.5px;} }
+  @media (max-width:760px){ .gctl button{padding:6px 8px;} }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 </head>
@@ -470,7 +473,7 @@ let state = {
   ],
   cards: [],
   bills: [],
-  dashboardPrefs: { order:['chart','categories','categoriesIncome','commitments','projections'], collapsed:{} }
+  dashboardPrefs: { collapsed:{} }
 };
 
 let ui = {
@@ -507,9 +510,8 @@ async function loadState(){
     const value = await storageGet('cofre-state');
     if(value){
       const loaded = JSON.parse(value);
-      state = Object.assign({ bills:[], dashboardPrefs:{order:['chart','categories','categoriesIncome','commitments','projections'],collapsed:{}} }, loaded);
-      if(!state.dashboardPrefs) state.dashboardPrefs = {order:['chart','categories','categoriesIncome','commitments','projections'],collapsed:{}};
-      migrateDashboardOrder();
+      state = Object.assign({ bills:[], dashboardPrefs:{collapsed:{}} }, loaded);
+      if(!state.dashboardPrefs) state.dashboardPrefs = {collapsed:{}};
       migrateCategoryTypes();
       state.bills = migrateBills(state.bills);
     }
@@ -520,13 +522,6 @@ function migrateCategoryTypes(){
   state.categories.forEach(c=>{ if(!c.type) c.type = 'expense'; });
   if(!state.categories.some(c=>c.name==='Outros' && c.type==='income')){
     state.categories.push({name:'Outros', type:'income', color:'#69737e', keywords:[]});
-  }
-}
-function migrateDashboardOrder(){
-  const order = state.dashboardPrefs.order;
-  if(!order.includes('categoriesIncome')){
-    const i = order.indexOf('categories');
-    order.splice(i>-1 ? i+1 : order.length, 0, 'categoriesIncome');
   }
 }
 async function saveState(){
@@ -960,16 +955,7 @@ function render(){
     </header>
     <nav id="mainnav" class="nv-${navPos()}${navCollapsed()?' collapsed':''}">${navCollapsed()?'':NAVGRIP}
       <div class="nvbrand">cofre</div>
-      <div class="nvlabel">Menu</div>
-      ${tabBtn('dashboard','Painel')}
-      ${tabBtn('balanco','Balanço do mês')}
-      ${tabBtn('orcamentos','Orçamentos')}
-      ${tabBtn('caixinhas','Caixinhas')}
-      ${tabBtn('lancamentos','Lançamentos')}
-      <div class="nvlabel">Geral</div>
-      ${tabBtn('contas','Contas a pagar')}
-      ${tabBtn('cartoes','Cartões & Parcelas')}
-      ${tabBtn('categorias','Configurações')}
+      ${navTabsHtml()}
       ${navSummary()}
       ${navToggleBtn()}
     </nav>
@@ -982,19 +968,13 @@ function render(){
   if(ui.modal) renderModal();
   if(ui.confirmBox) renderConfirm();
 }
-function setTab(id){ ui.tab = id; render(); }
+function setTab(id){ if(ui.tab!==id){ ui.editLayout=null; ui.editOrient=null; } ui.tab = id; render(); }
 function renderContent(){
   const c = document.getElementById('content');
   document.body.classList.toggle('nobg',!!(state.settings&&state.settings.nobg)); navAttrs();
-  if(ui.tab==='dashboard') c.innerHTML = dashboardView();
-  if(ui.tab==='lancamentos') c.innerHTML = transactionsView();
-  if(ui.tab==='contas') c.innerHTML = billsView();
+  if(GRID_TABS.includes(ui.tab)) c.innerHTML = gridView(ui.tab);
   if(ui.tab==='importar'){ c.innerHTML = importView(); attachDropZone(); }
-  if(ui.tab==='cartoes') c.innerHTML = cardsView();
-  if(ui.tab==='categorias'){ c.innerHTML = settingsView(); if(document.getElementById('dropZone')) attachDropZone(); }
-  if(ui.tab==='balanco') c.innerHTML = balancoView();
-  if(ui.tab==='orcamentos') c.innerHTML = orcamentosView();
-  if(ui.tab==='caixinhas') c.innerHTML = boxesView();
+  if(ui.tab==='categorias' && document.getElementById('dropZone')) attachDropZone();
 }
 function monthNav(){
   return `<div class="month-nav">
@@ -1090,7 +1070,6 @@ function monthsUntil(ym){
   const n = new Date(), [y,m] = ym.split('-').map(Number);
   return Math.max(1, (y-n.getFullYear())*12 + (m-(n.getMonth()+1)));
 }
-function parseMoney(s){ const n = parseFloat(String(s||'').replace(/\./g,'').replace(',','.')); return isNaN(n)?0:n; }
 function metasCard(){
   const goals = state.goals || [];
   const list = goals.map(g=>{
@@ -1105,24 +1084,6 @@ function metasCard(){
   const cut=state.cuttable||[];
   const chips=goals.length?`<div class="gsub" style="margin:14px 0 6px">Categorias que eu aceito reduzir:</div><div class="chips">${names.map(n=>`<button class="chip ${cut.includes(n)?'on':''}" data-n="${n}" onclick="toggleCut(this.dataset.n)">${n}</button>`).join('')}</div>`:'';
   return `<div class="card">${colHead('metas','Metas',`<button class="chip" onclick="addGoal()">Nova meta</button>`)}${c?'':`<div style="margin-top:14px;">${list||'<div class="empty">Crie uma meta com valor e prazo e acompanhe quanto guardar por mês.</div>'}${plans}${chips}</div>`}</div>`;
-}
-function addGoal(){
-  const name = prompt('Nome da meta (ex.: Viagem para a Europa)'); if(!name) return;
-  const target = parseMoney(prompt('Valor total da meta (R$)')); if(target<=0) return;
-  const saved = parseMoney(prompt('Quanto você já guardou? (R$)', '0'));
-  const deadline = prompt('Prazo no formato AAAA-MM (ex.: 2027-06)'); if(!/^\d{4}-\d{2}$/.test(deadline||'')) return;
-  state.goals = state.goals || [];
-  state.goals.push({id:'g'+Date.now(), name, target, saved, deadline});
-  saveState(); render();
-}
-function depositGoal(id){
-  const g = (state.goals||[]).find(x=>x.id===id); if(!g) return;
-  const v = parseMoney(prompt('Quanto você guardou agora? (R$)')); if(v<=0) return;
-  g.saved += v; saveState(); render();
-}
-function removeGoal(id){
-  if(!confirm('Excluir esta meta?')) return;
-  state.goals = (state.goals||[]).filter(x=>x.id!==id); saveState(); render();
 }
 
 // ===== Chat do Cofre (responde com os seus dados, sem internet) =====
@@ -1217,6 +1178,29 @@ function chatCard(){
 
 // ===== Navegação, projeção unificada, parcelas e plano de meta =====
 const NAVI={caixinhas:'<path d="M8 3h8M7 6h10"/><path d="M6 9a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3z"/><path d="M10 14h4"/>',dashboard:'<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',lancamentos:'<path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/>',contas:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',importar:'<path d="M12 3v12M12 15l-4-4M12 15l4-4M4 20h16"/>',cartoes:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/>',categorias:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>',balanco:'<path d="M5 20V10M12 20V4M19 20v-7"/>',orcamentos:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 15h2"/>'};
+// ===== Ordem das abas (você escolhe; vale nos seus aparelhos) =====
+const NAV_TABS=[['dashboard','Painel'],['balanco','Balanço do mês'],['orcamentos','Orçamentos'],['caixinhas','Caixinhas'],['lancamentos','Lançamentos'],['contas','Contas a pagar'],['cartoes','Cartões & Parcelas'],['categorias','Configurações']];
+const NAV_SPLIT=5; // as 5 primeiras ficam em "Menu", as demais em "Geral"
+function tabOrder(){ const def=NAV_TABS.map(x=>x[0]), o=(((state.settings||{}).tabOrder)||[]).filter((k,i,a)=>def.includes(k)&&a.indexOf(k)===i); def.forEach(k=>{ if(!o.includes(k)) o.push(k); }); return o; }
+function navTabsHtml(){ const lab=Object.fromEntries(NAV_TABS);
+  return tabOrder().map((id,i)=>(i===0?'<div class="nvlabel">Menu</div>':i===NAV_SPLIT?'<div class="nvlabel">Geral</div>':'')+tabBtn(id,lab[id])).join(''); }
+function setTabOrder(o){ state.settings=state.settings||{}; state.settings.tabOrder=o; saveState(); render(); }
+function tabMove(id,dir){ const o=tabOrder(), i=o.indexOf(id), j=i+dir; if(i<0||j<0||j>=o.length) return; o.splice(j,0,o.splice(i,1)[0]); setTabOrder(o); }
+function tabOrderReset(){ setTabOrder(NAV_TABS.map(x=>x[0])); }
+function tabOrderCard(){ const lab=Object.fromEntries(NAV_TABS), o=tabOrder();
+  const rows=o.map((id,i)=>`${i===0?'<div class="tol-sep">Menu</div>':i===NAV_SPLIT?'<div class="tol-sep">Geral</div>':''}<div class="tol-row" data-id="${id}"><span class="tol-grip" onpointerdown="tabDragStart(event,'${id}')" title="Arraste para mudar de lugar">${GBGRIP}</span><span class="tol-name">${lab[id]}</span><span class="tol-btns"><button ${i===0?'disabled':''} onclick="tabMove('${id}',-1)" title="Subir">${icon('arrowUp')}</button><button ${i===o.length-1?'disabled':''} onclick="tabMove('${id}',1)" title="Descer">${icon('arrowDown')}</button></span></div>`).join('');
+  return `<div class="card"><h2>Ordem das abas</h2><p class="gsub" style="margin:6px 0 12px">Arraste pelos pontinhos (ou use as setas) para escolher a ordem da barra de abas. As ${NAV_SPLIT} primeiras ficam em “Menu” e as demais em “Geral”.</p><div class="tol" id="tol">${rows}</div><div class="chips" style="margin:12px 0 0"><button class="chip" onclick="tabOrderReset()">Restaurar ordem original</button></div></div>`; }
+let TD=null;
+function tabDragStart(e,id){ e.preventDefault(); const box=document.getElementById('tol'); if(!box) return; const el=box.querySelector('.tol-row[data-id="'+id+'"]'); if(!el) return; TD={id,el,box,target:null,pos:null}; el.classList.add('dragging'); }
+function tabClear(){ document.querySelectorAll('.tol-row.drop-t,.tol-row.drop-b').forEach(n=>n.classList.remove('drop-t','drop-b')); }
+document.addEventListener('pointermove',e=>{ if(!TD) return;
+  if(e.clientY<90) window.scrollBy(0,-14); else if(e.clientY>innerHeight-90) window.scrollBy(0,14);
+  const t=document.elementFromPoint(e.clientX,e.clientY), over=t&&t.closest&&t.closest('.tol-row'); tabClear();
+  if(!over||over===TD.el||over.parentNode!==TD.box){ TD.target=null; return; }
+  const r=over.getBoundingClientRect(), before=e.clientY<r.top+r.height/2; TD.target=over.dataset.id; TD.pos=before?'before':'after'; over.classList.add(before?'drop-t':'drop-b'); });
+function tabDragEnd(){ if(!TD) return; const g=TD; TD=null; tabClear(); g.el.classList.remove('dragging'); if(!g.target) return;
+  const o=tabOrder().filter(k=>k!==g.id); let i=o.indexOf(g.target); if(g.pos==='after') i++; o.splice(i,0,g.id); setTabOrder(o); }
+document.addEventListener('pointerup',tabDragEnd); document.addEventListener('pointercancel',tabDragEnd);
 function tabBtn(id,label){ const short={contas:'Contas',importar:'Importar',cartoes:'Cartões',lancamentos:'Lançar',dashboard:'Início',categorias:'Config.',balanco:'Balanço',orcamentos:'Orçam.',caixinhas:'Caixas'}[id]||label;
   return `<button class="${ui.tab===id?'active':''}" onclick="setTab('${id}')" title="${label}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${NAVI[id]||''}</svg><span class="sh">${short}</span><span class="fl">${label}</span></button>`; }
 function colHead(wid,title,extra){ const c=!!state.dashboardPrefs.collapsed[wid];
@@ -1273,55 +1257,6 @@ function planoMeta(g){
 
 
 // ===== Tetos de gasto: quanto posso gastar por dia / semana =====
-function tetoList(m){ return state.bills.filter(b=>billApplies(b,m)&&(state.tetoBills||[]).includes(b.id)); }
-function tetoQs(){ return tetoList(ui.month).map(b=>`Quanto posso gastar em ${b.name}?`); }
-function toggleTeto(id){ state.tetoBills=state.tetoBills||[]; const i=state.tetoBills.indexOf(id); i>-1?state.tetoBills.splice(i,1):state.tetoBills.push(id); saveState(); render(); }
-function tetoPicker(){
-  const bs=state.bills.filter(b=>billApplies(b,ui.month)); if(!bs.length) return '';
-  return `<details style="margin-top:12px"><summary class="gsub" style="cursor:pointer">Escolher quais contas são tetos de gasto</summary><div class="chips" style="margin-top:8px">${bs.map(b=>`<button class="chip ${(state.tetoBills||[]).includes(b.id)?'on':''}" data-id="${b.id}" onclick="toggleTeto(this.dataset.id)">${esc(b.name)}</button>`).join('')}</div></details>`;
-}
-function tetoGasto(b,m){
-  const ex=new Set(); state.bills.forEach(x=>{const e=(x.paidMonths||{})[m]; if(e&&e.txId) ex.add(e.txId);});
-  state.cards.forEach(c=>c.purchases.forEach(p=>{const e=(p.paidMonths||{})[m]; if(e&&e.txId) ex.add(e.txId);}));
-  const nb=norm(b.name);
-  return txInMonth(m).filter(t=>t.type==='expense'&&!ex.has(t.id)).filter(t=>{
-    const cat=state.categories.find(c=>c.name===t.category&&c.type==='expense');
-    return norm(t.category)===nb||norm(t.desc||'').includes(nb)||(cat&&(cat.keywords||[]).some(k=>k.length>2&&(norm(k)===nb||nb.includes(norm(k)))));
-  }).reduce((a,t)=>a+t.amount,0);
-}
-function diaRecebe(){
-  const ms=[...new Set(state.transactions.filter(t=>t.type==='income').map(t=>t.date.slice(0,7)))].sort().slice(-3);
-  let w=0,a=0; state.transactions.filter(t=>t.type==='income'&&ms.includes(t.date.slice(0,7))).forEach(t=>{ w+=t.amount*Number(t.date.slice(8,10)); a+=t.amount; });
-  return a>0?Math.round(w/a):null;
-}
-function ritmo(){
-  const now=new Date(), cm=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  if(ui.month!==cm) return null;
-  const pd=diaRecebe(), d=now.getDate(), dim=daysIn(cm);
-  const days=pd&&pd>d ? pd-d : pd ? dim-d+pd : dim-d+1;
-  return {pd,days:Math.max(1,days)};
-}
-function tetoLinha(b){
-  const m=ui.month, teto=getBillAmount(b,m), g=tetoGasto(b,m), rest=teto-g, r=ritmo();
-  let h=`<b>${esc(b.name)}</b>: teto ${fmt(teto)}, gasto ${fmt(g)} (${pct(g/Math.max(teto,1))}%). `;
-  if(rest<0) h+=`Passou do teto em <b>${fmt(-rest)}</b>.`;
-  else { h+=`Restam <b>${fmt(rest)}</b>. `;
-    h+= r ? `Até o próximo recebimento${r.pd?` (dia ${r.pd})`:''}, em ${r.days} dia(s), dá <b>${fmt(rest/r.days)}/dia</b> ou <b>${fmt(rest/r.days*7)}/semana</b>.` : '(O cálculo por dia e por semana vale para o mês atual.)'; }
-  if(g===0) h+=' <span style="color:var(--muted)">Não achei lançamentos ligados a este teto: o app liga pelo nome da categoria, da descrição ou das palavras-chave.</span>';
-  return h;
-}
-function tetoAnswer(n){
-  const intent=/gast|posso|resta|teto|semana|sobr/.test(n);
-  const named=state.bills.filter(b=>billApplies(b,ui.month)&&norm(b.name).length>2&&n.includes(norm(b.name)));
-  if(named.length&&intent) return named.map(tetoLinha).join('<hr>');
-  if(/posso gastar|por semana|essa semana|esta semana|tetos|quanto (me )?resta/.test(n)){
-    const l=tetoList(ui.month);
-    if(!l.length) return 'Você ainda não marcou nenhum teto. Abra <b>Escolher quais contas são tetos de gasto</b> aqui embaixo e marque, por exemplo, o Mercado.';
-    const r=ritmo(), tot=l.reduce((a,b)=>a+Math.max(0,getBillAmount(b,ui.month)-tetoGasto(b,ui.month)),0);
-    return `Seus tetos em <b>${monthLabel(ui.month)}</b>:<hr>`+l.map(tetoLinha).join('<hr>')+(r?`<hr>Somando tudo, dá <b>${fmt(tot/r.days*7)}/semana</b>.`:'');
-  }
-  return null;
-}
 
 
 // ===== Orçamentos por categoria, alertas e balanço do mês =====
@@ -1330,33 +1265,7 @@ function curMonth(){ const n=new Date(); return n.getFullYear()+'-'+String(n.get
 function budgetState(b,m){ const L=budgetLimit(b,m), g=txInMonth(m).filter(t=>t.type==='expense'&&t.category===b.category&&!(t.linkedType==='bill'&&linkedToBudget(t.linkedBillId,b.category))).reduce((a,t)=>a+t.amount,0), p=L>0?g/L:(g>0?1:0); const rest=Math.round((L-g)*100)/100; return {g,p,rest,L,st:rest<0?'exc':(rest===0&&b.amount>0)?'done':p>=(((state.settings||{}).alertPct||80)/100)?'att':'ok'}; }
 function alertasBase(){ return budgetsOf().map(b=>({b,s:budgetState(b,ui.month)})).filter(x=>x.s.st!=='ok').map(x=>({st:x.s.st,k:'o:'+x.b.category+':'+x.s.st,g:'Orçamentos',t:x.s.st==='exc'?`<b>${esc(x.b.category)}</b> passou do limite em ${fmt(-x.s.rest)}.`:x.s.st==='done'?`<b>${esc(x.b.category)}</b> usou o limite total (${fmt(x.s.L)}). Não sobrou nada.`:`<b>${esc(x.b.category)}</b> está em ${pct(x.s.p)}% do limite, restam ${fmt(x.s.rest)}.`})).sort((a,b)=>(a.st==='exc'?0:1)-(b.st==='exc'?0:1)); }
 function alertasCard(){ return alertBandHtml(); }
-function addBudget(){
-  const names=[...new Set(state.categories.filter(c=>c.type==='expense').map(c=>c.name))];
-  const nm=prompt('Categoria do orçamento. Escolha uma:\n'+names.join(', ')); if(!nm) return;
-  const cat=names.find(x=>norm(x)===norm(nm.trim())); if(!cat){ alert('Categoria não encontrada.'); return; }
-  if(budgetsOf().some(b=>b.category===cat)){ alert('Essa categoria já tem orçamento. Use Editar.'); return; }
-  const amount=parseMoney(prompt('Limite mensal para '+cat+' (R$)')); if(amount<=0) return;
-  state.budgets=state.budgets||[]; state.budgets.push({id:'o'+Date.now(),category:cat,amount}); saveState(); render();
-}
-function editBudget(id){ const b=budgetsOf().find(x=>x.id===id); if(!b) return; const v=parseMoney(prompt('Novo limite mensal para '+b.category+' (R$)',String(b.amount).replace('.',','))); if(v>0){ b.amount=v; saveState(); render(); } }
-function removeBudget(id){ if(!confirm('Excluir este orçamento?')) return; state.budgets=budgetsOf().filter(x=>x.id!==id); saveState(); render(); }
-function orcamentosViewBase(){
-  const bs=budgetsOf(), m=ui.month, tot=bs.reduce((a,b)=>a+b.amount,0), gast=bs.reduce((a,b)=>a+budgetState(b,m).g,0);
-  const cards=bs.map(b=>{ const s=budgetState(b,m), badge=s.st==='exc'?'<span class="badge exc">Excedido</span>':s.st==='att'?'<span class="badge att">Atenção</span>':'';
-    return `<div class="orc ${s.st}">${ringSvg(Math.min(1,s.p),60)}<div class="orc-b"><div class="orc-t"><b>${esc(b.category)}</b>${badge}</div><div class="gval">${fmt(s.g)} <small>de ${fmt(b.amount)}</small></div><div class="gsub">${s.rest>=0?'Restam '+fmt(s.rest):'Excedido em '+fmt(-s.rest)}</div></div><div class="gbtns"><button class="chip" data-id="${b.id}" onclick="editBudget(this.dataset.id)">Editar</button><button class="chip x" data-id="${b.id}" onclick="removeBudget(this.dataset.id)">Excluir</button></div></div>`; }).join('');
-  return monthNav()+`<div class="card"><div class="card-head" style="cursor:default"><h2>Orçamentos por categoria</h2><button class="chip" onclick="addBudget()">Novo orçamento</button></div>
-    ${bs.length?`<div style="margin-top:14px"><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px"><b>Orçamento total</b><span>${fmt(gast)} <small style="color:var(--muted)">/ ${fmt(tot)}</small></span></div><div style="height:8px;border-radius:4px;background:#eee9de"><div style="height:100%;width:${Math.min(100,gast/Math.max(tot,1)*100)}%;border-radius:4px;background:var(--brand-deep)"></div></div></div>`:''}
-    <div class="orc-grid">${cards||'<div class="empty">Defina um limite mensal por categoria. Ex.: Mercado R$ 1.800. Os gastos lançados na categoria vão descontando do limite.</div>'}</div></div>`;
-}
 function saldoInicial(m){ const ov=state.openingBalance||{}; if(ov[m]!==undefined) return ov[m]; const ks=Object.keys(ov).filter(k=>k<m).sort(), k=ks.length?ks[ks.length-1]:null; const sum=state.transactions.filter(t=>t.date.slice(0,7)<m&&(k===null||t.date.slice(0,7)>=k)).reduce((a,t)=>a+(t.type==='income'?t.amount:-t.amount),0); return k===null?sum:ov[k]+sum; }
-function setSaldoInicial(){ const v=prompt('Saldo em conta no início deste mês (R$). Deixe vazio para calcular dos lançamentos.'); if(v===null) return; state.openingBalance=state.openingBalance||{}; if(v.trim()==='') delete state.openingBalance[ui.month]; else state.openingBalance[ui.month]=parseMoney(v); saveState(); render(); }
-function aindaCai(m){
-  if(m<curMonth()) return {contas:0,parcelas:0,orc:0};
-  const contas=state.bills.filter(b=>billApplies(b,m)&&!isBillPaid(b,m)).reduce((a,b)=>a+getBillAmount(b,m),0);
-  let parcelas=0; state.cards.forEach(c=>c.purchases.forEach(p=>{ if(!isPaidEntry((p.paidMonths||{})[m])) parcelas+=monthlyCommitment(p,m); }));
-  const orc=budgetsOf().reduce((a,b)=>a+Math.max(0,budgetState(b,m).rest),0);
-  return {contas,parcelas,orc};
-}
 function cascata(steps){
   const W=560,H=190,pad=26; let run=0;
   const pts=steps.map(s=>{ let a,b; if(s.t==='start'||s.t==='end'){a=0;b=s.v;run=s.v;} else {a=run;b=run+s.v;run=b;} return {...s,a,b}; });
@@ -1382,17 +1291,8 @@ function balancoView(){
     <div class="card"><h2>Comparado ao mês anterior</h2>${comp||'<div class="empty">Sem gastos neste mês.</div>'}</div>`;
 }
 // chat passa a usar os orçamentos
-function tetoList(m){ return budgetsOf(); }
 function tetoQs(){ return budgetsOf().map(b=>`Quanto posso gastar em ${b.category}?`); }
 function tetoPicker(){ return budgetsOf().length?'':`<div class="gsub" style="margin-top:12px">Crie limites na aba <b>Orçamentos</b> para eu responder quanto você pode gastar.</div>`; }
-function tetoLinha(b){
-  const s=budgetState(b,ui.month), r=ritmo();
-  let h=`<div style="display:flex;gap:14px;align-items:center">${ringSvg(Math.min(1,s.p),64)}<div><b>${esc(b.category)}</b>: ${fmt(s.g)} de ${fmt(s.L)}<br>`;
-  if(s.rest<0) h+=`Passou do limite em <b>${fmt(-s.rest)}</b>.`;
-  else if(s.rest===0) h+=`Usou o limite total. Não sobrou nada.`;
-  else { h+=`Restam <b>${fmt(s.rest)}</b>. `; h+= r?`Até o próximo recebimento${r.pd?` (dia ${r.pd})`:''}, em ${r.days} dia(s), dá <b>${fmt(s.rest/r.days)}/dia</b> ou <b>${fmt(s.rest/r.days*7)}/semana</b>.`:'(Por dia e por semana só no mês atual.)'; }
-  return h+'</div></div>';
-}
 function tetoAnswer(n){
   const bs=budgetsOf(), intent=/gast|posso|resta|limite|semana|sobr|orcamento/.test(n);
   if(/alerta|estour|perto do limite/.test(n)){ const a=alertas(); return a.length?'Atenção nestes orçamentos:<hr>'+a.map(x=>x.t).join('<br>'):'Nenhum orçamento perto do limite agora.'; }
@@ -1408,31 +1308,10 @@ function tetoAnswer(n){
 
 
 // ===== Fixo x variável =====
-function moveBillToBudget(id){
-  const b=state.bills.find(x=>x.id===id); if(!b) return;
-  const names=[...new Set(state.categories.filter(c=>c.type==='expense').map(c=>c.name))];
-  let cat=names.find(x=>norm(x)===norm(b.name));
-  if(!cat){ const nm=prompt('Em qual categoria os gastos de "'+b.name+'" são lançados? Escolha uma:\n'+names.join(', ')); if(!nm) return; cat=names.find(x=>norm(x)===norm(nm.trim())); if(!cat){ alert('Categoria não encontrada.'); return; } }
-  if(budgetsOf().some(x=>x.category===cat)){ alert('Já existe orçamento para '+cat+'. Edite o limite na lista acima.'); return; }
-  const v=getBillAmount(b,ui.month);
-  if(!confirm('Mover "'+b.name+'" para Orçamentos como limite de '+cat+' ('+fmt(v)+'/mês)? Ela sai da lista de contas a pagar.')) return;
-  state.budgets=state.budgets||[]; state.budgets.push({id:'o'+Date.now(),category:cat,amount:v}); b.variable=true; saveState(); render();
-}
-function restoreBill(id){ const b=state.bills.find(x=>x.id===id); if(!b) return; b.variable=false; saveState(); render(); }
-function orcamentosView(){
-  const live=state.bills.filter(b=>billApplies(b,ui.month)), moved=state.bills.filter(b=>b.variable);
-  const rows=live.map(b=>`<div class="commit-row"><span>${esc(b.name)} <small style="color:var(--muted)">${fmt(getBillAmount(b,ui.month))}</small></span><button class="chip" data-id="${b.id}" onclick="moveBillToBudget(this.dataset.id)">É variável: mover para Orçamentos</button></div>`).join('');
-  const back=moved.map(b=>`<div class="commit-row"><span>${esc(b.name)}</span><button class="chip x" data-id="${b.id}" onclick="restoreBill(this.dataset.id)">Voltar para contas a pagar</button></div>`).join('');
-  return orcamentosViewBase()+`<div class="card"><h2>Contas a pagar: fixas ou variáveis?</h2><p class="gsub">Contas a pagar devem ter só custos fixos, pagos de uma vez (aluguel, escola). O que vai sendo gasto aos poucos (mercado, delivery) é variável e fica em Orçamentos.</p>${rows||'<div class="empty">Nenhuma conta a pagar neste mês.</div>'}${back?`<div class="gsub" style="margin-top:14px">Já movidas:</div>${back}`:''}</div>`;
-}
 
 
 // ===== Contas a pagar (lembrete) x Orçamento (controle) + dia de recebimento =====
 function billLink(b){ if(b.noLink) return null; const bs=budgetsOf(); if(b.budgetCat&&bs.some(x=>x.category===b.budgetCat)) return b.budgetCat; const nb=norm(b.name), hit=bs.find(x=>norm(x.category)===nb); return hit?hit.category:null; }
-function linkBill(id){ const b=state.bills.find(x=>x.id===id), bs=budgetsOf(); if(!b) return; if(!bs.length){ alert('Crie um orçamento primeiro.'); return; }
-  const nm=prompt('O valor da conta "'+b.name+'" já está dentro de qual orçamento? Escolha:\n'+bs.map(x=>x.category).join(', ')); if(!nm) return;
-  const hit=bs.find(x=>norm(x.category)===norm(nm.trim())); if(!hit){ alert('Orçamento não encontrado.'); return; }
-  b.budgetCat=hit.category; b.noLink=false; saveState(); render(); }
 function unlinkBill(id){ const b=state.bills.find(x=>x.id===id); if(!b) return; b.budgetCat=null; b.noLink=true; saveState(); render(); }
 function aindaCai(m){
   if(m<curMonth()) return {contas:0,parcelas:0,orc:0};
@@ -1447,11 +1326,6 @@ function paydayWindow(){
   ms.forEach(m=>{ const inc=state.transactions.filter(t=>t.type==='income'&&t.date.slice(0,7)===m), mx=Math.max(...inc.map(t=>t.amount)); inc.filter(t=>t.amount>=mx*0.25).forEach(t=>days.push(Number(t.date.slice(8,10)))); });
   return days.length?{from:Math.min(...days),to:Math.max(...days),manual:false}:null;
 }
-function setPayday(){
-  const v=prompt('Entre quais dias do mês você costuma receber? Ex.: 5-8 (ou só um dia). Deixe vazio para o app detectar sozinho.'); if(v===null) return;
-  if(v.trim()===''){ delete state.payday; } else { const m=v.match(/(\d{1,2})\D+(\d{1,2})/)||v.match(/(\d{1,2})/); if(!m) return; const a=Number(m[1]), b=Number(m[2]||m[1]); state.payday={from:Math.min(a,b),to:Math.max(a,b)}; }
-  saveState(); render();
-}
 function ritmo(){
   const cm=curMonth(); if(ui.month!==cm) return null;
   const w=paydayWindow(), d=new Date().getDate(), dim=daysIn(cm), pd=w?w.to:null;
@@ -1465,12 +1339,6 @@ function tetoLinha(b){
   else if(s.rest===0) h+=`Usou o limite total. Não sobrou nada.`;
   else { h+=`Restam <b>${fmt(s.rest)}</b>. `; h+= r?`Você costuma receber ${r.from&&r.from!==r.pd?`entre o dia ${r.from} e o dia ${r.pd}`:`no dia ${r.pd}`}. Contando até o dia ${r.pd}, são ${r.days} dia(s): dá <b>${fmt(s.rest/r.days)}/dia</b> ou <b>${fmt(s.rest/r.days*7)}/semana</b>.`:'(Por dia e por semana só no mês atual.)'; }
   return h+'</div></div>';
-}
-function orcamentosView(){
-  const w=paydayWindow(), live=state.bills.filter(b=>billApplies(b,ui.month));
-  const rows=live.map(b=>{ const l=billLink(b); return `<div class="commit-row"><span>${esc(b.name)} <small style="color:var(--muted)">${fmt(getBillAmount(b,ui.month))}${l?' · ligada ao orçamento '+esc(l):''}</small></span>${l?`<button class="chip x" data-id="${b.id}" onclick="unlinkBill(this.dataset.id)">Desligar</button>`:`<button class="chip" data-id="${b.id}" onclick="linkBill(this.dataset.id)">Ligar a um orçamento</button>`}</div>`; }).join('');
-  return orcamentosViewBase()+`<div class="card"><h2>Dia em que você recebe</h2><p class="lead" style="font-size:14.5px;margin:10px 0">${w?`Você costuma receber ${w.from!==w.to?`entre o dia <b>${w.from}</b> e o dia <b>${w.to}</b>`:`no dia <b>${w.to}</b>`} (${w.manual?'definido por você':'detectado nos últimos 3 meses'}). A sugestão por dia e por semana conta os dias até o dia ${w.to}, o mais tarde, para o dinheiro não faltar.`:'Ainda não há entradas lançadas para eu detectar o seu dia de recebimento.'}</p><button class="chip" onclick="setPayday()">Ajustar dias</button></div>
-  <div class="card"><h2>Contas a pagar e orçamentos</h2><p class="gsub">Contas a pagar são o seu lembrete do que vai sair e a estimativa do mês que vem. O orçamento acompanha quanto você já gastou e quanto ainda tem. Pode ter os dois com o mesmo valor, como Mercado R$ 1.800. Quando estão ligados, o Balanço conta só o que resta do orçamento, para não duplicar. Ligam sozinhos quando o nome é igual.</p>${rows||'<div class="empty">Nenhuma conta a pagar neste mês.</div>'}</div>`;
 }
 
 function linkedToBudget(id,cat){ const bl=state.bills.find(x=>x.id===id); return !!bl&&billLink(bl)===cat; }
@@ -1491,7 +1359,6 @@ function addBudget(){
   if(!names.length){ openForm('Novo orçamento',[],()=>null,'Ok','Todas as categorias de gasto já têm orçamento. Crie categorias novas em Configurações.'); return; }
   openForm('Novo orçamento',[{id:'cat',label:'Categoria',kind:'select',options:names,value:names[0]},{id:'amount',label:'Limite mensal (R$)',kind:'money',placeholder:'1.800,00'}],v=>{ const a=parseMoney(v.amount); if(a<=0) return 'Digite um valor maior que zero.'; state.budgets=state.budgets||[]; state.budgets.push({id:'o'+Date.now(),category:v.cat,amount:a}); saveState(); },'Criar');
 }
-function editBudget(id){ const b=budgetsOf().find(x=>x.id===id); if(!b) return; openForm('Limite de '+b.category,[{id:'amount',label:'Limite mensal (R$)',kind:'money',value:String(b.amount).replace('.',',')}],v=>{ const a=parseMoney(v.amount); if(a<=0) return 'Digite um valor maior que zero.'; b.amount=a; saveState(); }); }
 function removeBudget(id){ const b=budgetsOf().find(x=>x.id===id); if(!b) return; askConfirm('Excluir o orçamento de <b>'+esc(b.category)+'</b>?',()=>{ state.budgets=budgetsOf().filter(x=>x.id!==id); saveState(); render(); }); }
 function setSaldoInicial(){ const cur=(state.openingBalance||{})[ui.month]; openForm('Saldo inicial de '+monthLabel(ui.month),[{id:'v',label:'Saldo total no início do mês, conta + caixinhas (R$)',kind:'money',value:cur!==undefined?String(cur).replace('.',','):'',placeholder:'Vazio = calcular dos lançamentos'}],v=>{ state.openingBalance=state.openingBalance||{}; if(String(v.v).trim()==='') delete state.openingBalance[ui.month]; else state.openingBalance[ui.month]=parseMoney(v.v); saveState(); }); }
 function setPayday(){ const w=state.payday||{}; openForm('Dia em que você recebe',[{id:'a',label:'Do dia (1 a 31)',kind:'number',value:w.from||''},{id:'b',label:'Até o dia (1 a 31)',kind:'number',value:w.to||''}],v=>{ if(!v.a&&!v.b){ delete state.payday; saveState(); return; } const a=Number(v.a||v.b), b=Number(v.b||v.a); if(!(a>=1&&a<=31&&b>=1&&b<=31)) return 'Use dias entre 1 e 31.'; state.payday={from:Math.min(a,b),to:Math.max(a,b)}; saveState(); },'Salvar','Deixe os dois campos vazios para o app detectar sozinho.'); }
@@ -1516,36 +1383,12 @@ function settingsView(){
     ${row('Ocultar valores','Esconde os valores em dinheiro na tela, útil em público.',`<button class="chip ${st.hide?'on':''}" onclick="setSetting('hide',${!st.hide})">${st.hide?'Ligado':'Desligado'}</button>`)}
     ${navRows()}
     ${row('Gravura ao fundo','Mostra ou esconde o desenho do casarão atrás das telas.',`<button class="chip ${st.nobg?'':'on'}" onclick="setSetting('nobg',${!st.nobg})">${st.nobg?'Desligada':'Ligada'}</button>`)}
-  </div>`+categoriesView();
+  </div>`+tabOrderCard()+categoriesView();
 }
 
 
 // ===== Telas mais compactas =====
 function cfgCard(id,title,body){ const cl=state.dashboardPrefs.collapsed; if(cl[id]===undefined) cl[id]=true; return `<div class="card">${colHead(id,title)}${cl[id]?'':`<div style="margin-top:12px">${body}</div>`}</div>`; }
-function filterCats(inp){ const q=inp.value.toLowerCase(); inp.parentElement.querySelectorAll('.catrow').forEach(r=>{ r.style.display=r.dataset.n.includes(q)?'':'none'; }); }
-function categorySectionHtml(type,label){
-  const rows=state.categories.map((c,i)=>c.type===type?{c,i}:null).filter(Boolean);
-  const body=`<input placeholder="Filtrar categorias…" oninput="filterCats(this)" style="margin-bottom:6px"/>`+rows.map(({c,i})=>`<div class="catrow" data-n="${esc(c.name.toLowerCase())}"><span class="dot" style="background:${c.color}"></span><input class="cn" value="${esc(c.name)}" onchange="renameCategory(${i}, this.value)"/><input class="ck" placeholder="palavras-chave, separadas por vírgula" value="${esc(c.keywords.join(', '))}" onchange="updateKeywords(${i}, this.value)"/><button class="iconbtn" onclick="deleteCategory(${i})" title="Excluir">${icon('trash')}</button></div>`).join('')+`<button class="btn btn-ghost" style="margin-top:10px" onclick="addCategory('${type}')">+ Nova categoria de ${label.toLowerCase()}</button>`;
-  return cfgCard('cfg_'+type,`Categorias de ${label} (${rows.length})`,body);
-}
-function categoriesView(){
-  return categorySectionHtml('expense','Saída')+categorySectionHtml('income','Entrada')
-   +cfgCard('cfg_tools','Ferramentas',`<div style="display:flex;gap:10px;flex-wrap:wrap;"><button class="btn btn-ghost" onclick="loadSuggestedCategories()">${icon('sparkles')} Carregar categorias sugeridas (saída)</button><button class="btn btn-ghost" onclick="reclassifyAll()">${icon('refresh')} Reclassificar lançamentos</button></div>`)
-   +cfgCard('cfg_backup','Backup',`<p style="font-size:13px;color:var(--muted);margin:0 0 12px">Baixe um arquivo com todos os seus dados para guardar ou levar a outro aparelho. Para restaurar, carregue o arquivo.</p><div style="display:flex;gap:10px;flex-wrap:wrap;"><button class="btn btn-primary" onclick="exportBackup()">💾 Fazer backup (baixar arquivo)</button><button class="btn btn-ghost" onclick="document.getElementById('backupFileInput').click()">📂 Carregar backup</button><input type="file" id="backupFileInput" accept=".json" style="display:none;" onchange="handleBackupFile(event)"/></div>`)
-   +cfgCard('cfg_risk','Zona de risco',`<p style="font-size:13px;color:var(--muted);margin:0 0 12px">Use se quiser recomeçar do zero.</p><button class="btn btn-danger" onclick="deleteAllData()">Apagar todos os dados do app</button>`);
-}
-function orcamentosViewBase(){
-  const bs=budgetsOf(), m=ui.month, r=ritmo(), w=paydayWindow();
-  const stt=bs.map(b=>({b,s:budgetState(b,m)})), tot=bs.reduce((a,b)=>a+budgetLimit(b,m),0), gast=stt.reduce((a,x)=>a+x.s.g,0), restTot=stt.reduce((a,x)=>a+Math.max(0,x.s.rest),0);
-  const cards=stt.map(({b,s})=>{ const badge=s.st==='exc'?'<span class="badge exc">Excedido</span>':s.st==='att'?'<span class="badge att">Atenção</span>':'';
-    const pace=(r&&s.rest>0)?`<div class="gsub"><b>${fmt(s.rest/r.days)}</b>/dia · <b>${fmt(s.rest/r.days*7)}</b>/semana</div>`:'';
-    return `<div class="orc ${s.st}">${ringSvg(Math.min(1,s.p),52)}<div class="orc-b"><div class="orc-t"><b>${esc(b.category)}</b>${badge}</div><div class="gsub">${fmt(s.g)} de ${fmt(b.amount)} · ${s.rest>=0?'restam '+fmt(s.rest):'excedido em '+fmt(-s.rest)}</div>${pace}</div><div class="gbtns"><button class="chip" data-id="${b.id}" onclick="editBudget(this.dataset.id)">Editar</button><button class="chip x" data-id="${b.id}" onclick="removeBudget(this.dataset.id)">Excluir</button></div></div>`; }).join('');
-  const quando=r?(w&&w.from!==w.to?`Você costuma receber entre o dia ${w.from} e o dia ${w.to}`:`Você costuma receber no dia ${r.pd}`):'';
-  const sumario=bs.length?`<div class="plan" style="background:var(--brand-soft);margin-top:12px">${r?`${r.pd?quando+'. Contando até o dia '+r.pd:'Sem entradas para detectar o dia de recebimento. Contando até o fim do mês'}, são ${r.days} dia(s): somando os orçamentos, dá <b>${fmt(restTot/r.days)}/dia</b> ou <b>${fmt(restTot/r.days*7)}/semana</b>.`:'A sugestão por dia e por semana só vale para o mês atual.'} <button class="chip" onclick="setPayday()">Ajustar dias</button></div>`:'';
-  return monthNav()+`<div class="card"><div class="card-head" style="cursor:default"><h2>Orçamentos por categoria</h2><button class="chip" onclick="addBudget()">Novo orçamento</button></div>
-    ${bs.length?`<div style="margin-top:12px"><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px"><b>Orçamento total</b><span>${fmt(gast)} <small style="color:var(--muted)">/ ${fmt(tot)}</small></span></div><div style="height:8px;border-radius:4px;background:#eee9de"><div style="height:100%;width:${Math.min(100,gast/Math.max(tot,1)*100)}%;border-radius:4px;background:var(--brand-deep)"></div></div></div>`:''}${sumario}
-    <div class="orc-grid">${cards||'<div class="empty">Defina um limite mensal por categoria. Ex.: Mercado R$ 1.800. Os gastos lançados na categoria vão descontando do limite.</div>'}</div></div>`;
-}
 function orcamentosView(){
   const cl=state.dashboardPrefs.collapsed; if(cl.ligacoes===undefined) cl.ligacoes=true;
   const rows=state.bills.filter(b=>billApplies(b,ui.month)).map(b=>{ const l=billLink(b); return `<div class="lig"><span>${esc(b.name)} <small>${fmt(getBillAmount(b,ui.month))}${l?' · ligada a '+esc(l):''}</small></span>${l?`<button class="chip x" data-id="${b.id}" onclick="unlinkBill(this.dataset.id)">Desligar</button>`:`<button class="chip" data-id="${b.id}" onclick="linkBill(this.dataset.id)">Ligar</button>`}</div>`; }).join('');
@@ -1555,12 +1398,6 @@ function orcamentosView(){
 
 // ===== Importar em Configurações, categorias em chips, orçamentos no estilo Auro =====
 function importSection(){ const cl=state.dashboardPrefs.collapsed; if(cl.cfg_import===undefined) cl.cfg_import=true; return `<div class="card">${colHead('cfg_import','Importar extrato')}</div>`+(cl.cfg_import?'':importView()); }
-function filterCats(inp){ const q=inp.value.toLowerCase(); inp.parentElement.querySelectorAll('.catchip').forEach(r=>{ r.style.display=r.dataset.n.includes(q)?'':'none'; }); }
-function categorySectionHtml(type,label){
-  const rows=state.categories.map((c,i)=>c.type===type?{c,i}:null).filter(Boolean);
-  const body=`<input placeholder="Filtrar categorias…" oninput="filterCats(this)" style="margin-bottom:10px"/><div class="chipcloud">${rows.map(({c,i})=>`<button class="catchip" data-n="${esc(c.name.toLowerCase())}" onclick="editCategory(${i})" title="${esc(c.keywords.join(', ')||'sem palavras-chave')}"><span class="dot" style="background:${c.color}"></span>${esc(c.name)}</button>`).join('')}</div><button class="btn btn-ghost" style="margin-top:12px" onclick="addCategory('${type}')">+ Nova categoria de ${label.toLowerCase()}</button>`;
-  return cfgCard('cfg_'+type,`Categorias de ${label} (${rows.length})`,body);
-}
 function editCategory(i){
   const c=state.categories[i]; if(!c) return;
   openForm('Categoria: '+c.name,[{id:'n',label:'Nome',kind:'text',value:c.name},{id:'k',label:'Palavras-chave (separadas por vírgula)',kind:'text',value:c.keywords.join(', ')}],v=>{
@@ -1743,59 +1580,96 @@ const PAGE_TITLES={dashboard:'Painel',balanco:'Balanço do mês',orcamentos:'Or�
 function navSummary(){ if(navCollapsed()) return ''; let b=0; try{ b=monthTotals(ui.month).balance; }catch(_){}
   return `<div class="nvsum"><small>Saldo de ${monthLabel(ui.month)}</small><b>${fmt(b)}</b></div>`; }
 
-// ===== Painel: blocos que você organiza (mover, puxar o cantinho, layouts separados p/ aberto e fechado) =====
+// ===== Blocos que você organiza: mover, puxar o cantinho, esticar, ocultar; layouts separados p/ tela horizontal e vertical =====
+// Vale para o Painel e para todas as outras abas (cada aba guarda o próprio layout).
 const COLS=48;
 const BLOCK_DEF={resumo:{t:'Seu dinheiro',o:20,c:20,col:false},resumoMes:{t:'Resumo do mês',o:28,c:28,col:false},alertas:{t:'Alertas',o:48,c:48,col:false},chat:{t:'Converse com o Cofre',o:48,c:24,col:true},metas:{t:'Metas',o:48,c:24,col:true},chart:{t:'Entradas x Saídas',o:48,c:24,col:true},categories:{t:'Saídas por categoria',o:48,c:24,col:true},categoriesIncome:{t:'Entradas por categoria',o:48,c:24,col:true},commitments:{t:'Comprometido com parcelas',o:24,c:24,col:true},projections:{t:'Projeção dos próximos meses',o:24,c:24,col:true}};
 const BLOCK_ORDER=['resumo','resumoMes','alertas','chat','metas','chart','categories','categoriesIncome','commitments','projections'];
+const GRID_TABS=['dashboard','balanco','orcamentos','caixinhas','lancamentos','contas','cartoes','categorias'];
+const TAB_VIEWS={balanco:()=>balancoView(),orcamentos:()=>orcamentosView(),caixinhas:()=>boxesView(),lancamentos:()=>transactionsView(),contas:()=>billsView(),cartoes:()=>cardsView(),categorias:()=>settingsView()};
+// o que está na tela agora: abas, blocos, definições e o HTML de cada bloco
+let GBX={tab:null,items:[],by:{},html:{}};
 // orientação: no toque usa a posição real do aparelho (o teclado não conta); no computador, o formato da janela
 function gbCurOrient(){ try{ if(matchMedia('(pointer:coarse)').matches && screen.orientation && screen.orientation.type) return screen.orientation.type.indexOf('landscape')===0?'h':'v'; }catch(_){} return innerWidth>=innerHeight?'h':'v'; }
 function gbOrient(){ return ui.editOrient||gbCurOrient(); }
-function gbPrefs(){ const p=state.dashboardPrefs; p.layouts=p.layouts||{}; const o=gbOrient();
-  if(!p.layouts[o]){ const src=p.layouts[o==='h'?'v':'h']||p, L={};
-    ['blocks','span','hidden','h','stretch'].forEach(k=>{ if(src[k]!==undefined) L[k]=JSON.parse(JSON.stringify(src[k])); }); p.layouts[o]=L; }
-  const L=p.layouts[o];
-  if(!Array.isArray(L.blocks)) L.blocks=['resumo','resumoMes','alertas','chat','metas'].concat(p.order||[]);
-  BLOCK_ORDER.forEach(k=>{ if(!L.blocks.includes(k)) L.blocks.push(k); });
-  L.blocks=L.blocks.filter((k,i)=>BLOCK_DEF[k]&&L.blocks.indexOf(k)===i);
+function gbDef(id){ return ui.tab==='dashboard'?BLOCK_DEF[id]:GBX.by[id]; }
+function gbSlot(tab){ const p=state.dashboardPrefs; if(tab==='dashboard'){ p.layouts=p.layouts||{}; return p.layouts; } p.tabs=p.tabs||{}; return (p.tabs[tab]=p.tabs[tab]||{}); }
+function gbPrefs(){ const tab=ui.tab, p=state.dashboardPrefs, o=gbOrient(), S=gbSlot(tab), dash=tab==='dashboard';
+  if(!S[o]){ const other=S[o==='h'?'v':'h']||(dash?p:null), L={};
+    if(other) ['blocks','span','hidden','h','stretch'].forEach(k=>{ if(other[k]!==undefined) L[k]=JSON.parse(JSON.stringify(other[k])); }); S[o]=L; }
+  const L=S[o], nat=dash?BLOCK_ORDER:(GBX.tab===tab?GBX.items.map(i=>i.id):[]);
+  if(!Array.isArray(L.blocks)) L.blocks=dash?['resumo','resumoMes','alertas','chat','metas'].concat(p.order||[]):[];
+  // bloco novo entra logo depois do que vem antes dele na ordem natural da tela
+  nat.forEach((k,i)=>{ if(!L.blocks.includes(k)){ if(dash) L.blocks.push(k); else { const j=i>0?L.blocks.indexOf(nat[i-1]):-1; L.blocks.splice(j+1,0,k); } } });
+  L.blocks=L.blocks.filter((k,i)=>(!dash||BLOCK_DEF[k])&&L.blocks.indexOf(k)===i);
   L.span=L.span||{}; L.hidden=L.hidden||{}; L.h=L.h||{}; L.stretch=L.stretch||{};
   Object.keys(L.span).forEach(k=>{ if(typeof L.span[k]==='number') L.span[k]={o:L.span[k]*4,c:L.span[k]*4}; });
   return L; }
 let _gbLastOr=gbCurOrient();
-function gbOrientCheck(){ const o=gbCurOrient(); if(o===_gbLastOr) return; _gbLastOr=o; const a=document.activeElement; if(ui.editLayout||(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return; if(ui.tab==='dashboard') render(); }
+function gbOrientCheck(){ const o=gbCurOrient(); if(o===_gbLastOr) return; _gbLastOr=o; const a=document.activeElement; if(ui.editLayout||(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return; if(GRID_TABS.includes(ui.tab)) render(); }
 window.addEventListener('resize',()=>{ clearTimeout(gbOrientCheck._t); gbOrientCheck._t=setTimeout(gbOrientCheck,200); });
 window.addEventListener('orientationchange',()=>{ clearTimeout(gbOrientCheck._t); gbOrientCheck._t=setTimeout(gbOrientCheck,300); });
-function gbIsClosed(id){ return BLOCK_DEF[id].col && !!state.dashboardPrefs.collapsed[id]; }
-function gbSpan(id,st){ const p=gbPrefs(), d=BLOCK_DEF[id], k=(d.col&&st==='c')?'c':'o', v=p.span[id];
+function gbIsClosed(id){ const d=gbDef(id); return !!(d&&d.col&&state.dashboardPrefs.collapsed[d.key||id]); }
+function gbSpan(id,st){ const p=gbPrefs(), d=gbDef(id), k=(d.col&&st==='c')?'c':'o', v=p.span[id];
   const n=(v&&typeof v==='object'&&v[k])||d[k]; return Math.max(10,Math.min(COLS,Math.round(n))); }
 function blockHtml(id,force){
   const p=state.dashboardPrefs, d=BLOCK_DEF[id]; let had=false,old;
   if(force&&d.col){ had=Object.prototype.hasOwnProperty.call(p.collapsed,id); old=p.collapsed[id]; p.collapsed[id]=(force==='c'); }
   try{
     const w={chart:widgetChart,categories:widgetCategories,categoriesIncome:widgetCategoriesIncome,commitments:widgetCommitments,projections:widgetProjections};
-    if(w[id]) return widgetShell(id,0,1,!!p.collapsed[id],w[id]());
+    if(w[id]) return widgetShell(id,!!p.collapsed[id],w[id]());
     return ({resumo:resumoCard,resumoMes:resumoMesCard,alertas:alertasCard,chat:chatCard,metas:metasCard})[id]();
   } finally { if(force&&d.col){ if(had) p.collapsed[id]=old; else delete p.collapsed[id]; } }
+}
+// --- outras abas: cada cartão da tela vira um bloco (a identidade vem do título, sem o mês nem a contagem)
+function gbSlug(t){ return t.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+function gbSplit(html){
+  const t=document.createElement('template'); t.innerHTML=html; let head=''; const items=[], seen={};
+  [...t.content.children].forEach((el,n)=>{
+    if(!items.length&&el.classList.contains('month-nav')){ head+=el.outerHTML; return; }
+    const h=el.querySelector('h2,h3,.eyebrow');
+    const title=h?h.textContent.replace(/\s*(de\s+)?(Jan|Fev|Mar|Abr|Mai|Jun|Jul|Ago|Set|Out|Nov|Dez)\s*\/\s*\d{4}/g,'').replace(/\s*\([^)]*\)/g,'').trim():'';
+    let id=gbSlug(title)||('bloco-'+(n+1)); if(seen[id]){ let k=2; while(seen[id+'-'+k]) k++; id=id+'-'+k; } seen[id]=1;
+    const ch=el.querySelector('.card-head[onclick^="toggleWidgetCollapse"]'), m=ch&&/toggleWidgetCollapse\('([^']+)'\)/.exec(ch.getAttribute('onclick'));
+    items.push({id,t:title||('Bloco '+(items.length+1)),col:m?m[1]:null,html:el.outerHTML});
+  });
+  return {head,items};
+}
+function gbTabItems(tab,mode){
+  let r=gbSplit(TAB_VIEWS[tab]());
+  const keys=r.items.filter(i=>i.col).map(i=>i.col);
+  if(mode&&keys.length){ // no modo de edição, mostra todos os blocos que recolhem abertos ou fechados, conforme o que está sendo editado
+    const cl=state.dashboardPrefs.collapsed, saved={};
+    keys.forEach(k=>{ saved[k]=Object.prototype.hasOwnProperty.call(cl,k)?[cl[k]]:null; cl[k]=(mode==='c'); });
+    try{ r=gbSplit(TAB_VIEWS[tab]()); } finally{ keys.forEach(k=>{ if(saved[k]) cl[k]=saved[k][0]; else delete cl[k]; }); }
+  }
+  return r;
 }
 const GBGRIP='<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
 function gbCtl(id,span,hid,hset,openLike){ const p=gbPrefs();
   return `<div class="gctl"><span class="gh" onpointerdown="gbDragStart(event,'${id}')" title="Arraste para mudar de lugar">${GBGRIP}</span><span class="gw">${Math.round(span/COLS*100)}%</span><button class="${p.stretch[id]?'on':''}" onclick="gbStretch('${id}')" title="Faz o bloco acompanhar a altura do vizinho da mesma linha">Esticar</button>${hset&&openLike?`<button onclick="gbAutoH('${id}')" title="Volta a altura automática">Altura auto</button>`:''}<button onclick="${hid?'gbShow':'gbHide'}('${id}')">${hid?'Mostrar':'Ocultar'}</button></div>`; }
 function layoutBar(){ const m=ui.editLayout;
   if(!m) return `<div class="lay-bar"><button class="chip" onclick="toggleLayoutEdit()">Organizar blocos</button></div>`;
-  const or=gbOrient(), real=gbCurOrient();
-  return `<div class="lay-bar"><div class="lay-seg"><button class="${or==='h'?'on':''}" onclick="setLayoutOrient('h')">Tela horizontal</button><button class="${or==='v'?'on':''}" onclick="setLayoutOrient('v')">Tela vertical</button></div><div class="lay-seg"><button class="${m==='o'?'on':''}" onclick="setLayoutMode('o')">Blocos abertos</button><button class="${m==='c'?'on':''}" onclick="setLayoutMode('c')">Blocos fechados</button></div><span class="lay-hint">Editando o layout da tela ${or==='h'?'na horizontal':'na vertical'}, com os blocos ${m==='o'?'abertos':'fechados (vale para os que recolhem)'}.${or!==real?' Gire o aparelho para ver ao vivo.':''} Puxe o cantinho para mudar o tamanho e arraste pelos pontinhos para mudar de lugar.</span><button class="chip" onclick="gbReset()">Restaurar padrão</button><button class="chip on" onclick="toggleLayoutEdit()">Concluir</button></div>`; }
-function dashboardView(){
-  const p=gbPrefs(), mode=ui.editLayout||null; let items='';
+  const or=gbOrient(), real=gbCurOrient(), hasCol=GBX.items.some(i=>i.col);
+  return `<div class="lay-bar"><div class="lay-seg"><button class="${or==='h'?'on':''}" onclick="setLayoutOrient('h')">Tela horizontal</button><button class="${or==='v'?'on':''}" onclick="setLayoutOrient('v')">Tela vertical</button></div>${hasCol?`<div class="lay-seg"><button class="${m==='o'?'on':''}" onclick="setLayoutMode('o')">Blocos abertos</button><button class="${m==='c'?'on':''}" onclick="setLayoutMode('c')">Blocos fechados</button></div>`:''}<span class="lay-hint">Editando o layout desta tela ${or==='h'?'na horizontal':'na vertical'}${hasCol?`, com os blocos ${m==='o'?'abertos':'fechados (vale para os que recolhem)'}`:''}.${or!==real?' Gire o aparelho para ver ao vivo.':''} Puxe o cantinho para mudar o tamanho e arraste pelos pontinhos para mudar de lugar.</span><button class="chip" onclick="gbReset()">Restaurar padrão</button><button class="chip on" onclick="toggleLayoutEdit()">Concluir</button></div>`; }
+function gridView(tab){
+  const mode=ui.editLayout||null, dash=tab==='dashboard'; let head;
+  if(dash){ head=monthNav(); GBX={tab,items:BLOCK_ORDER.map(id=>({id,t:BLOCK_DEF[id].t,col:BLOCK_DEF[id].col})),by:{},html:{}}; }
+  else { const r=gbTabItems(tab,mode); head=r.head; GBX={tab,items:r.items,by:{},html:{}};
+    r.items.forEach(i=>{ GBX.by[i.id]={t:i.t,o:COLS,c:COLS,col:!!i.col,key:i.col}; GBX.html[i.id]=i.html; }); }
+  const p=gbPrefs(); let items='';
   p.blocks.forEach(id=>{
+    const d=gbDef(id); if(!d) return;
     const hid=!!p.hidden[id]; if(hid&&!mode) return;
-    const d=BLOCK_DEF[id], st=mode?mode:(gbIsClosed(id)?'c':'o'), openLike=!d.col||st==='o';
+    const st=mode?mode:(gbIsClosed(id)?'c':'o'), openLike=!d.col||st==='o';
     let inner;
-    if(hid) inner=`<div class="card gb-off"><span>${d.t} (oculto)</span></div>`;
-    else { inner=blockHtml(id,mode||undefined); if(!inner||!String(inner).trim()) return; }
+    if(hid) inner=`<div class="card gb-off"><span>${esc(d.t)} (oculto)</span></div>`;
+    else { inner=dash?blockHtml(id,mode||undefined):GBX.html[id]; if(!inner||!String(inner).trim()) return; }
     const span=gbSpan(id,st), h=(!hid&&openLike&&p.h[id])?p.h[id]:0;
     const cls='gb'+(mode?' edit':'')+(h?' hset':'')+(p.stretch[id]?' stretch':'');
     items+=`<div class="${cls}" data-id="${id}" style="--sp:${span};${h?`--h:${h}px`:''}">${mode?gbCtl(id,span,hid,!!h,openLike):''}${inner}${mode&&!hid?`<span class="gresize" onpointerdown="gbResizeStart(event,'${id}','${st}')" title="Puxe para mudar o tamanho"></span>`:''}</div>`;
   });
-  return monthNav()+layoutBar()+`<div class="dgrid" id="dgrid">${items}</div>`;
+  return head+layoutBar()+`<div class="dgrid" id="dgrid">${items}</div>`;
 }
 function toggleLayoutEdit(){ if(ui.editLayout){ ui.editLayout=null; ui.editOrient=null; } else { ui.editLayout='o'; ui.editOrient=gbCurOrient(); } render(); }
 function setLayoutOrient(o){ ui.editOrient=o; render(); }
@@ -1804,11 +1678,11 @@ function gbHide(id){ gbPrefs().hidden[id]=true; saveState(); render(); }
 function gbShow(id){ delete gbPrefs().hidden[id]; saveState(); render(); }
 function gbStretch(id){ const p=gbPrefs(); if(p.stretch[id]) delete p.stretch[id]; else p.stretch[id]=true; saveState(); render(); }
 function gbAutoH(id){ delete gbPrefs().h[id]; saveState(); render(); }
-function gbReset(){ const p=state.dashboardPrefs; p.layouts=p.layouts||{}; p.layouts[gbOrient()]={}; saveState(); render(); }
+function gbReset(){ gbSlot(ui.tab)[gbOrient()]={}; saveState(); render(); }
 // --- puxar o cantinho: largura (e altura, nos blocos abertos) livres
 let GR=null;
 function gbResizeStart(e,id,st){ e.preventDefault(); e.stopPropagation(); const grid=document.getElementById('dgrid'); if(!grid) return;
-  const el=grid.querySelector('.gb[data-id="'+id+'"]'); if(!el) return; const card=el.querySelector(':scope>.card'); const d=BLOCK_DEF[id];
+  const el=grid.querySelector('.gb[data-id="'+id+'"]'); if(!el) return; const card=el.querySelector(':scope>:not(.gctl):not(.gresize)'); const d=gbDef(id);
   GR={id,st,el,card,unit:grid.clientWidth/COLS,sx:e.clientX,sy:e.clientY,w:el.getBoundingClientRect().width,ch:card?card.getBoundingClientRect().height:0,span:gbSpan(id,st),h:null,openLike:(!d.col||st==='o')};
   el.classList.add('resizing'); document.body.style.userSelect='none'; }
 document.addEventListener('pointermove',e=>{ if(!GR) return;
@@ -1818,7 +1692,7 @@ document.addEventListener('pointermove',e=>{ if(!GR) return;
   if(GR.openLike&&GR.card&&Math.abs(e.clientY-GR.sy)>6){ const nh=Math.max(90,Math.round(GR.ch+(e.clientY-GR.sy))); GR.h=nh; GR.el.classList.add('hset'); GR.el.style.setProperty('--h',nh+'px'); }
   if(e.clientY<90) window.scrollBy(0,-12); else if(e.clientY>innerHeight-90) window.scrollBy(0,12); });
 function gbResizeEnd(){ if(!GR) return; const g=GR; GR=null; document.body.style.userSelect=''; g.el.classList.remove('resizing');
-  const p=gbPrefs(), d=BLOCK_DEF[g.id], k=(d.col&&g.st==='c')?'c':'o'; const v=(p.span[g.id]&&typeof p.span[g.id]==='object')?p.span[g.id]:{}; v[k]=g.span; p.span[g.id]=v;
+  const p=gbPrefs(), d=gbDef(g.id), k=(d.col&&g.st==='c')?'c':'o'; const v=(p.span[g.id]&&typeof p.span[g.id]==='object')?p.span[g.id]:{}; v[k]=g.span; p.span[g.id]=v;
   if(g.h!=null) p.h[g.id]=g.h; saveState(); render(); }
 document.addEventListener('pointerup',gbResizeEnd); document.addEventListener('pointercancel',gbResizeEnd);
 // --- arrastar pelos pontinhos: mudar de lugar
@@ -1837,52 +1711,14 @@ function gbDragEnd(){ if(!GB) return; const g=GB; GB=null; gbClear(); g.el.class
   if(!g.target) return; const p=gbPrefs(); const b=p.blocks.filter(k=>k!==g.id); let i=b.indexOf(g.target); if(g.pos==='after') i++; b.splice(i,0,g.id); p.blocks=b; saveState(); render(); }
 document.addEventListener('pointerup',gbDragEnd); document.addEventListener('pointercancel',gbDragEnd);
 
-function dashboardViewV1(){
-  const order = state.dashboardPrefs.order;
-  const widgets = { chart: widgetChart, categories: widgetCategories, categoriesIncome: widgetCategoriesIncome, commitments: widgetCommitments, projections: widgetProjections };
-  let html = monthNav() + resumoCard() + resumoMesCard() + alertasCard() + chatCard() + metasCard();
-  order.forEach((wid, idx)=>{
-    const collapsed = !!state.dashboardPrefs.collapsed[wid];
-    html += widgetShell(wid, idx, order.length, collapsed, widgets[wid] ? widgets[wid]() : '');
-  });
-  return html;
-}
-
-function dashboardViewOld(){
-  const cur = monthTotals(ui.month);
-  const order = state.dashboardPrefs.order;
-  const widgets = { chart: widgetChart, categories: widgetCategories, categoriesIncome: widgetCategoriesIncome, commitments: widgetCommitments, projections: widgetProjections };
-  let html = `
-    ${monthNav()}
-    <div class="hero">
-      <div class="label">Saldo de ${monthLabel(ui.month)}</div>
-      <div class="balance">${fmt(cur.balance)}</div>
-      <div class="pills">
-        <div class="pill"><div class="plabel">Entradas</div><div class="pval">${fmt(cur.income)}</div></div>
-        <div class="pill"><div class="plabel">Saídas</div><div class="pval">${fmt(cur.expense)}</div></div>
-      </div>
-    </div>
-  `;
-  order.forEach((wid, idx)=>{
-    const collapsed = !!state.dashboardPrefs.collapsed[wid];
-    html += widgetShell(wid, idx, order.length, collapsed, widgets[wid] ? widgets[wid]() : '');
-  });
-  return html;
-}
 const WIDGET_TITLES = { chart:'Entradas x Saídas', categories:'Saídas por categoria', categoriesIncome:'Entradas por categoria', commitments:'Comprometido com parcelas', projections:'Projeção dos próximos meses' };
-function widgetShell(wid, idx, total, collapsed, innerHtml){
+function widgetShell(wid, collapsed, innerHtml){
   return `
     <div class="card">
       <div class="card-head" onclick="toggleWidgetCollapse('${wid}')">
         <div class="card-head-left">
           <span style="color:var(--muted);">${collapsed?icon('chevronDown'):icon('chevronUp')}</span>
           <h2>${WIDGET_TITLES[wid]}</h2>
-        </div>
-        <div class="card-actions" onclick="event.stopPropagation()">
-          <div class="reorder-controls">
-            <button ${idx===0?'disabled':''} onclick="moveWidget('${wid}',-1)" title="Mover pra cima">${icon('arrowUp')}</button>
-            <button ${idx===total-1?'disabled':''} onclick="moveWidget('${wid}',1)" title="Mover pra baixo">${icon('arrowDown')}</button>
-          </div>
         </div>
       </div>
       ${collapsed ? '' : `<div style="margin-top:14px;">${innerHtml}</div>`}
@@ -1891,14 +1727,6 @@ function widgetShell(wid, idx, total, collapsed, innerHtml){
 }
 function toggleWidgetCollapse(wid){
   state.dashboardPrefs.collapsed[wid] = !state.dashboardPrefs.collapsed[wid];
-  saveState(); render();
-}
-function moveWidget(wid, dir){
-  const order = state.dashboardPrefs.order;
-  const i = order.indexOf(wid);
-  const j = i + dir;
-  if(j<0 || j>=order.length) return;
-  [order[i], order[j]] = [order[j], order[i]];
   saveState(); render();
 }
 function widgetChart(){
@@ -2002,67 +1830,13 @@ function toggleIncomeCategoryExpand(name){
   ui.expandedIncomeCategory = ui.expandedIncomeCategory===name ? null : name;
   render();
 }
-function widgetCommitmentsOld(){
-  let html = '';
-  for(let i=0;i<3;i++){
-    const m = shiftMonth(ui.month,i);
-    html += `<div class="commit-row"><span>${monthLabel(m)}</span><span>${fmt(totalCommitmentForMonth(m))}</span></div>`;
-  }
-  return html || `<div class="empty">Nenhuma parcela cadastrada.</div>`;
-}
 function billsTotalForMonth(m){
   return state.bills.filter(b=>billApplies(b,m)).reduce((s,b)=>s+getBillAmount(b,m),0);
 }
 function knownCommittedForMonth(m){
   return billsTotalForMonth(m) + totalCommitmentForMonth(m);
 }
-function widgetProjectionsOld(){
-  const monthsWithData = [...new Set(state.transactions.map(t=>t.date.slice(0,7)))].sort();
-  const histMonths = monthsWithData.filter(m=>m<ui.month).slice(-3);
-  if(!histMonths.length){
-    return `<div class="empty">Preciso de pelo menos um mês <em>anterior</em> lançado pra projetar.</div>`;
-  }
-  const histTotals = histMonths.map(m=>monthTotals(m));
-  const avgIncome = histTotals.reduce((s,t)=>s+t.income,0)/histTotals.length;
-  // separa o que já era "conhecido" (contas+cartão) do que sobrou de variável em cada mês passado
-  const histVariable = histMonths.map(m=>Math.max(0, monthTotals(m).expense - knownCommittedForMonth(m)));
-  const avgVariable = histVariable.reduce((s,v)=>s+v,0)/histVariable.length;
 
-  const rows = [];
-  for(let i=1;i<=3;i++){
-    const m = shiftMonth(ui.month,i);
-    const known = knownCommittedForMonth(m);
-    const balance = avgIncome - known - avgVariable;
-    rows.push({m, known, balance});
-  }
-  const worst = rows.reduce((a,b)=> b.balance<a.balance ? b : a, rows[0]);
-
-  let html = `<p style="font-size:11px;color:var(--muted);margin:0 0 8px;">Entrada média (${histMonths.length} mês(es)): ${fmt(avgIncome)} • Variável médio (fora contas/cartão): ${fmt(avgVariable)}</p>`;
-  html += `<table><thead><tr><th>Mês</th><th style="text-align:right">Contas+cartão</th><th style="text-align:right">Saldo projetado</th></tr></thead><tbody>`;
-  rows.forEach(r=>{
-    html += `<tr><td>${monthLabel(r.m)}</td><td class="num">${fmt(r.known)}</td><td class="num" style="color:${r.balance<0?'var(--red)':'var(--green)'}">${fmt(r.balance)}</td></tr>`;
-  });
-  html += `</tbody></table>`;
-
-  if(worst.balance < 0){
-    html += `<div class="insight warn" style="margin-top:10px;">Atenção: <strong>${monthLabel(worst.m)}</strong> deve fechar negativo em cerca de <strong>${fmt(worst.balance)}</strong>.</div>`;
-  }
-  // visão anual: só o que já é certeza (contas fixas + parcelas já cadastradas), sem estimativa variável
-  let known12 = 0;
-  for(let i=1;i<=12;i++) known12 += knownCommittedForMonth(shiftMonth(ui.month,i));
-  if(known12>0) html += `<p style="font-size:11px;color:var(--muted);margin-top:8px;">Já garantido (contas fixas + parcelas) pros próximos 12 meses: <strong>${fmt(known12)}</strong>.</p>`;
-
-  let maxEnd = null;
-  state.cards.forEach(c=>c.purchases.forEach(p=>{
-    const [y,m] = p.startMonth.split('-').map(Number);
-    let em = m + p.installments - 1, ey = y;
-    while(em>12){em-=12;ey++;}
-    const endYm = ey+'-'+String(em).padStart(2,'0');
-    if(!maxEnd || endYm > maxEnd) maxEnd = endYm;
-  }));
-  if(maxEnd) html += `<p style="font-size:11px;color:var(--muted);margin-top:4px;">Parcelas de cartão devem zerar em <strong>${monthLabel(maxEnd)}</strong>.</p>`;
-  return html;
-}
 
 function orphanBanner(){
   const orphans = findOrphanTransactions();
@@ -2701,53 +2475,6 @@ function deletePurchase(cardId, purchaseId){
   });
 }
 
-function categorySectionHtmlOrig(type, label){
-  const rows = state.categories.map((c,i)=> c.type===type ? {c,i} : null).filter(Boolean);
-  return `
-    <div class="card">
-      <h2>Categorias de ${label}</h2>
-      <p style="font-size:13px;color:var(--muted);margin:8px 0 14px;">Palavras-chave ajudam a categorizar automaticamente. Mesmo nome usado nas duas listas não se mistura — cada lado tem sua própria conta.</p>
-      ${rows.map(({c,i})=>`
-        <div style="border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-            <span class="dot" style="background:${c.color}"></span>
-            <input style="flex:1;font-weight:600;" value="${c.name}" onchange="renameCategory(${i}, this.value)"/>
-            <button style="background:none;border:none;cursor:pointer;color:var(--muted);" onclick="deleteCategory(${i})" title="Excluir">${icon('trash')}</button>
-          </div>
-          <input placeholder="palavras-chave separadas por vírgula" value="${c.keywords.join(', ')}" onchange="updateKeywords(${i}, this.value)"/>
-        </div>
-      `).join('')}
-      <button class="btn btn-ghost" onclick="addCategory('${type}')">+ Nova categoria de ${label.toLowerCase()}</button>
-    </div>
-  `;
-}
-function categoriesViewOrig(){
-  return `
-    ${categorySectionHtml('expense','Saída')}
-    ${categorySectionHtml('income','Entrada')}
-    <div class="card">
-      <h2>Ferramentas</h2>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn btn-ghost" onclick="loadSuggestedCategories()">${icon('sparkles')} Carregar categorias sugeridas (saída)</button>
-        <button class="btn btn-ghost" onclick="reclassifyAll()">${icon('refresh')} Reclassificar lançamentos</button>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Backup</h2>
-      <p style="font-size:13px;color:var(--muted);margin-top:-6px;">Baixe um arquivo com todos os seus dados (lançamentos, cartões, contas, categorias) pra guardar em outro lugar ou levar pra outro aparelho. Se algo der errado, é só carregar o backup de volta.</p>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="exportBackup()">💾 Fazer backup (baixar arquivo)</button>
-        <button class="btn btn-ghost" onclick="document.getElementById('backupFileInput').click()">📂 Carregar backup</button>
-        <input type="file" id="backupFileInput" accept=".json" style="display:none;" onchange="handleBackupFile(event)"/>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Zona de risco</h2>
-      <p style="font-size:13px;color:var(--muted);margin:8px 0 14px;">Use se quiser recomeçar do zero.</p>
-      <button class="btn btn-danger" onclick="deleteAllData()">Apagar todos os dados do app</button>
-    </div>
-  `;
-}
 function renameCategory(i, val){ state.categories[i].name = val; saveState(); }
 function updateKeywords(i, val){ state.categories[i].keywords = val.split(',').map(s=>s.trim()).filter(Boolean); saveState(); }
 function addCategory(type){
@@ -2811,9 +2538,8 @@ function handleBackupFile(e){
     }
     askConfirm('Isso vai SUBSTITUIR todos os dados atuais do app pelos dados desse backup. Os dados de agora serão perdidos se você não tiver outro backup deles.' + (sy.session ? ' A sincronização está ligada: a nuvem (e os outros aparelhos) também serão substituídos por esse backup.' : '') + ' Continuar?', ()=>{
       sySafetyCopy('antes-de-restaurar-backup');
-      state = Object.assign({ bills:[], dashboardPrefs:{order:['chart','categories','categoriesIncome','commitments','projections'],collapsed:{}} }, loaded);
-      if(!state.dashboardPrefs) state.dashboardPrefs = {order:['chart','categories','categoriesIncome','commitments','projections'],collapsed:{}};
-      migrateDashboardOrder();
+      state = Object.assign({ bills:[], dashboardPrefs:{collapsed:{}} }, loaded);
+      if(!state.dashboardPrefs) state.dashboardPrefs = {collapsed:{}};
       migrateCategoryTypes();
       state.bills = migrateBills(state.bills);
       ui.selectedTx = [];
@@ -2829,7 +2555,7 @@ function deleteAllData(){
     sySafetyCopy('antes-de-apagar-tudo');
     state = {
       transactions: [], bills: [], cards: [], caixinhas: [], transfers: [], budgetAdj: {},
-      dashboardPrefs: { order:['chart','categories','categoriesIncome','commitments','projections'], collapsed:{} },
+      dashboardPrefs: { collapsed:{} },
       categories: [
         {name:'Aluguel', color:'#3a5a8c', keywords:['opea','aluguel','securitizadora']},
         {name:'Renda extra', color:'#12805c', keywords:['renda extra']},
@@ -3081,7 +2807,7 @@ window.updateTxFilter=updateTxFilter; window.clearTxFilter=clearTxFilter;
 window.deleteAllInMonth=deleteAllInMonth; window.deleteAllData=deleteAllData; window.toggleCategoryExpand=toggleCategoryExpand; window.toggleIncomeCategoryExpand=toggleIncomeCategoryExpand;
 window.loadSuggestedCategories=loadSuggestedCategories; window.applyBulkCategory=applyBulkCategory; window.refineCategoriesWithAI=refineCategoriesWithAI;
 window.extractPdfWithAI=extractPdfWithAI; window.deleteOrphans=deleteOrphans;
-window.toggleWidgetCollapse=toggleWidgetCollapse; window.moveWidget=moveWidget;
+window.toggleWidgetCollapse=toggleWidgetCollapse;
 window.openBillModal=openBillModal; window.toggleBillPaid=toggleBillPaid; window.deleteBill=deleteBill; window.saveBill=saveBill; window.toggleBillModalMonth=toggleBillModalMonth;
 window.confirmPaidDate=confirmPaidDate;
 window.togglePurchasePaid=togglePurchasePaid;
@@ -3523,11 +3249,11 @@ function syPend(kind,row){ sy.paused=true; sy.ready=false; sy.pending={kind,row}
 async function syApply(row){
   sySafetyCopy('antes-de-carregar-da-nuvem');
   const keepLocal={}; SY_LOCAL_SETTINGS.forEach(k=>{ if(state.settings&&state.settings[k]!==undefined) keepLocal[k]=state.settings[k]; });
-  const defPrefs=()=>({order:['chart','categories','categoriesIncome','commitments','projections'],collapsed:{}});
+  const defPrefs=()=>({collapsed:{}});
   state = Object.assign({ bills:[], dashboardPrefs:defPrefs() }, row.payload);
   if(!state.dashboardPrefs) state.dashboardPrefs = defPrefs();
   if(Object.keys(keepLocal).length){ state.settings=Object.assign({},state.settings||{},keepLocal); }
-  migrateDashboardOrder(); migrateCategoryTypes(); state.bills = migrateBills(state.bills);
+  migrateCategoryTypes(); state.bills = migrateBills(state.bills);
   ui.selectedTx = [];
   try{ await storageSet('cofre-state', JSON.stringify(state)); }catch(e){ console.error('erro ao salvar localmente', e); syToast('Aviso: não consegui gravar localmente os dados da nuvem.'); }
   syMetaSet({ userId:sy.session.user.id, baseUpdatedAt:row.updated_at, baseHash:syHash(sySnap()), baseHadData:syHasData(state) });
