@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261028-3">
+<meta name="cofre-version" content="20261102-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -2120,7 +2120,7 @@ function alertBellHtml(){ const n=alertasVisiveis().length; return `<button clas
 function alertPanelToggle(v){ ui.alertPanel=!!v; render(); }
 function alertPanelHtml(){ if(!ui.alertPanel) return ''; const a=alertasVisiveis();
   return `<div class="modal-bg" onclick="if(event.target===this)alertPanelToggle(false)"><div class="modal" role="dialog" aria-label="Alertas"><div class="al-head"><h2>Alertas</h2><button class="chip x" onclick="alertPanelToggle(false)">Fechar</button></div>${a.length?alertasAgrupados(a)+`<div style="margin-top:12px"><button class="chip" onclick="ui.alertPanel=false;setTab('orcamentos')">Ver orçamentos</button></div>`:'<div class="empty">Nenhum alerta agora.</div>'}</div></div>`; }
-function alertBandHtml(){ const a=alertasVisiveis(); if(!a.length) return ''; const open=!!(state.settings&&state.settings.alertBandOpen);
+function alertBandHtml(){ const a=alertasVisiveis(); if(!a.length) return `<div class="card al-band"><div class="al-bh" style="cursor:default"><span><b>Nenhum</b> alerta</span><span style="color:var(--green);font-weight:700">✓</span></div></div>`; const open=!!(state.settings&&state.settings.alertBandOpen);
   return `<div class="card al-band"><div class="al-bh" role="button" tabindex="0" aria-expanded="${open}" onclick="alertBandToggle()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();alertBandToggle();}"><span><b>${a.length}</b> ${a.length===1?'alerta':'alertas'}</span><span style="color:var(--muted)">${open?icon('chevronUp'):icon('chevronDown')}</span></div>${open?`<div class="al-list">${alertasAgrupados(a)}<button class="chip" style="margin-top:8px" onclick="setTab('orcamentos')">Ver orçamentos</button></div>`:''}</div>`; }
 function alertBandToggle(){ setSetting('alertBandOpen', !(state.settings&&state.settings.alertBandOpen)); }
 function alertToast(){
