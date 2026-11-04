@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261102-1">
+<meta name="cofre-version" content="20261103-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -2954,12 +2954,18 @@ function cxDevolver(id){
   },'Devolver',cf?'Se o dinheiro vai para outra coisa e não volta, o limite do orçamento diminui só neste mês. Se pretende repor, escolha manter.':'');
 }
 function cxAjustarConta(){
-  openForm('Saldo da conta corrente hoje',[{id:'v',label:'Quanto tem na conta hoje (R$)',kind:'money',value:String(contaAt(todayISO())).replace('.',',')}],v=>{
+  const hoje=todayISO();
+  openForm('Acertar a conta com o banco',[
+    {id:'d',label:'Saldo de qual dia? (pode ser um dia passado, como o último dia do mês)',kind:'date',value:hoje},
+    {id:'v',label:'Quanto o banco mostrava nesse dia (R$)',kind:'money',value:String(contaAt(hoje)).replace('.',',')}
+  ],v=>{
     if(String(v.v).trim()==='') return 'Digite o saldo da conta.';
-    const target=parseMoney(v.v), cm=curMonth(), today=todayISO();
-    const want=r2(target+boxTotalAt(today)), flows=r2(txInMonth(cm).filter(t=>t.date<=today).reduce((a,t)=>a+(t.type==='income'?t.amount:-t.amount),0));
-    state.openingBalance=state.openingBalance||{}; state.openingBalance[cm]=r2(want-flows); saveState();
-  },'Salvar','Digite o saldo que o banco mostra só para a conta corrente, sem as caixinhas. O app acerta o resto sozinho.');
+    const dia=String(v.d||'').slice(0,10); if(!/^\d{4}-\d{2}-\d{2}$/.test(dia)) return 'Escolha o dia.';
+    if(dia>hoje) return 'Escolha um dia que já passou (ou hoje).';
+    const target=parseMoney(v.v), dm=dia.slice(0,7);
+    const want=r2(target+boxTotalAt(dia)), flows=r2(txInMonth(dm).filter(t=>t.date<=dia).reduce((a,t)=>a+(t.type==='income'?t.amount:-t.amount),0));
+    state.openingBalance=state.openingBalance||{}; state.openingBalance[dm]=r2(want-flows); saveState();
+  },'Salvar','Digite o saldo que o banco mostrava só da conta corrente, sem as caixinhas, no dia escolhido. O app acerta o saldo inicial daquele mês para o dia fechar nesse valor. Os outros meses não mudam.');
 }
 function cxDelTransfer(tid,bid){ state.transfers=(state.transfers||[]).filter(t=>t.id!==tid); saveState(); closeModal(); cxMoves(bid); }
 function cxMoves(id){
