@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261103-1">
+<meta name="cofre-version" content="20261105-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -1498,6 +1498,7 @@ function wgPlan(g,today){
   return Object.assign(c,{weeks,N,cur,amount,spentTot,rest:amount-spentTot,ritmo:Math.max(0,(amount-spentTot)/left),next:weeks[cur+1]||null});
 }
 function wgBlock(b){
+  if(mercadoOn(b)) return mercadoBlock(b);
   const cat=b.category, g=wgGoals()[cat], c=esc(cat);
   if(!wgOn(cat)) return `<button class="obc-l" data-c="${c}" onclick="wgEdit(this.dataset.c)">+ Meta semanal do ciclo</button>`;
   const p=wgPlan(Object.assign({},g,{__cat:cat}),todayISO()), w=p.weeks[p.cur], left=w.allow-w.spent, over=left<0;
@@ -1511,6 +1512,72 @@ function wgBlock(b){
     <div class="wg-r"><span>Ritmo ajustado</span><b>${fmt(p.ritmo)}/semana</b></div>${nxt}
     <div class="wg-r"><span>Período ${wgBR(p.start)} a ${wgBR(p.end)}</span><b>${fmt(p.spentTot)} de ${fmt(p.amount)} · semana ${p.cur+1} de ${p.N}</b></div>
     ${wgNotice(b,g,p)}<button class="obc-l" data-c="${c}" onclick="wgEdit(this.dataset.c)">Ajustar meta</button></div>`;
+}
+function mercadoOn(b){ return norm(b.category)==='mercado'&&budgetBoxIds(b).some(id=>boxById(id)); }
+function mercadoCalc(b,today){
+  const ids=budgetBoxIds(b).filter(id=>boxById(id)), R=Math.min(28,Math.max(1,Number(b.reposDay)||8));
+  const pos=(state.transfers||[]).filter(t=>ids.includes(t.boxId)&&t.amount>0&&t.date<=today);
+  const lastPos=pos.reduce((a,t)=>t.date>a?t.date:a,'');
+  const mon=wgMon(today), sun=wgAdd(mon,6), D=(lastPos&&lastPos>mon)?lastPos:mon;
+  const pool=r2(ids.reduce((a,id)=>a+boxBalanceAt(id,wgAdd(D,-1)),0)+pos.filter(t=>t.date===D).reduce((a,t)=>a+t.amount,0));
+  const nextR=from=>{ let d=from; for(let i=0;i<70;i++){ if(wgDate(d).getDate()===R) return d; d=wgAdd(d,1); } return from; };
+  const ov=(b.reposOverride&&(b.reposOverrideFor||'')===lastPos&&b.reposOverride>D)?b.reposOverride:'';
+  const cand=ov||(lastPos?nextR(wgAdd(lastPos,15)):nextR(wgAdd(today,1)));
+  const overdue=!!lastPos&&cand<=today, repo=overdue?nextR(wgAdd(today,1)):cand;
+  const diff=(a,c)=>Math.round((wgDate(c)-wgDate(a))/864e5);
+  const daysLeft=Math.max(1,diff(D,repo)), end=wgAdd(repo,-1)<sun?wgAdd(repo,-1):sun, dw=Math.max(1,diff(D,end)+1);
+  const allow=pool>0?r2(pool/daysLeft*dw):0;
+  const ex=state.transactions.filter(t=>t.type==='expense'&&t.category===b.category&&t.date>=D&&t.date<=sun&&!(t.linkedType==='bill'&&linkedToBudget(t.linkedBillId,b.category)));
+  const spent=r2(ex.reduce((a,t)=>a+t.amount,0)), noBox=ex.filter(t=>!t.boxId).length;
+  const days=[]; for(let i=0;i<7;i++){ const d=wgAdd(mon,i); days.push({d:d,v:r2(ex.filter(t=>t.date===d).reduce((a,t)=>a+t.amount,0))}); }
+  const bal=r2(ids.reduce((a,id)=>a+boxBalanceAt(id,today),0));
+  return {ids,R,lastPos,mon,sun,D,pool,cand,repo,overdue,daysLeft,end,dw,allow,spent,rest:r2(allow-spent),noBox,days,bal,custom:!!ov};
+}
+function mercadoBlock(b){
+  const c=mercadoCalc(b,todayISO()), over=c.rest<0, empty=c.pool<=0&&c.bal<=0;
+  const pc=c.allow>0?Math.min(100,Math.max(0,c.spent/c.allow*100)):(c.spent>0?100:0);
+  const big=empty?'Caixinha vazia':over?`Passou ${fmt(-c.rest)}`:`Até domingo (${wgBR(c.sun)}) você pode gastar ${fmt(c.rest)}`;
+  const rem=c.overdue?`<div class="obc-x">Novo ciclo. Hora de repor a caixinha do Mercado.</div>`:'';
+  return `<div class="wg${over?' over':''}"><div class="wg-h"><b>Mercado da semana</b><span>${wgBR(c.D)} a ${wgBR(c.end)}</span></div>
+    <div class="gsub">Na caixinha: <b>${fmt(c.bal)}</b></div>
+    <div class="wg-big">${big}</div><div class="wg-bar"><i style="width:${pc}%"></i></div>${rem}
+    <button class="obc-l" data-id="${b.id}" onclick="mercadoDetalhes(this.dataset.id)">Ver detalhes</button></div>`;
+}
+function mercadoDetalhes(id){
+  const b=budgetsOf().find(x=>x.id===id); if(!b) return; const c=mercadoCalc(b,todayISO()), m=curMonth();
+  const row=(l,v,st)=>`<div class="lig" style="${st||''}"><span>${l}</span><b>${v}</b></div>`, wd=['seg','ter','qua','qui','sex','sáb','dom'];
+  const mesGasto=wgSpent(b.category,m+'-01',m+'-31');
+  let h='<div style="max-height:380px;overflow:auto"><div class="eyebrow">Gasto por dia desta semana</div>';
+  h+=c.days.map((x,i)=>row(wd[i]+' '+wgBR(x.d),fmt(x.v))).join('');
+  h+=row('<b>Total da semana</b>','<b>'+fmt(c.spent)+'</b>','border-top:1px solid var(--line,#ddd);margin-top:4px;padding-top:4px');
+  h+='<div class="eyebrow" style="margin-top:12px">Como o valor foi calculado</div>';
+  h+=row('Valor que estava na caixinha em '+wgBR(c.D),fmt(c.pool));
+  h+=row('Dias até a reposição',String(c.daysLeft));
+  h+=row('Valor desta semana ('+c.dw+' dia'+(c.dw===1?'':'s')+')',fmt(c.allow));
+  h+='<div class="eyebrow" style="margin-top:12px">Outras informações</div>';
+  h+=row('Próxima reposição',wgBR(c.repo)+(c.custom?' (escolhida por você)':''));
+  h+=row('Gasto de Mercado no mês',fmt(mesGasto));
+  h+=row('Limite do mês (só referência)',fmt(b.amount));
+  h+=row('Saldo da caixinha hoje',fmt(c.bal));
+  if(c.noBox) h+=`<div class="obc-x">${c.noBox} gasto${c.noBox===1?'':'s'} desta semana não saiu${c.noBox===1?'':'ram'} da caixinha. Eles entram na conta da semana, mas não diminuem o saldo dela.</div>`;
+  if(c.overdue) h+='<div class="obc-x">A data de reposição passou. Separe o dinheiro do novo ciclo na caixinha.</div>';
+  h+=`<button class="btn btn-ghost" style="margin-top:10px" onclick="closeModal();mercadoRepos('${id}')">Mudar a data da reposição</button></div>`;
+  openForm('Mercado: detalhes',[],()=>{},'Fechar','O valor da semana é calculado quando a semana começa ou quando você separa dinheiro novo. Gastar não muda esse valor.');
+  ui.modal.extra=h; renderModal2();
+}
+function mercadoRepos(id){
+  const b=budgetsOf().find(x=>x.id===id); if(!b) return; const c=mercadoCalc(b,todayISO());
+  openForm('Reposição do Mercado',[
+    {id:'r',label:'Dia do mês em que o dinheiro novo entra (1 a 28)',kind:'text',value:String(c.R)},
+    {id:'d',label:'Próxima reposição (só desta vez)',kind:'date',value:c.repo}
+  ],v=>{
+    const r=Math.round(Number(String(v.r).replace(/\D/g,''))); if(!(r>=1&&r<=28)) return 'Digite um dia entre 1 e 28.';
+    const d=String(v.d||'').slice(0,10); if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return 'Escolha a data.';
+    if(d<=todayISO()) return 'A próxima reposição precisa ser depois de hoje.';
+    const dayChanged=r!==c.R; b.reposDay=r;
+    if(d!==c.repo&&!dayChanged){ b.reposOverride=d; b.reposOverrideFor=c.lastPos; } else { delete b.reposOverride; delete b.reposOverrideFor; }
+    saveState();
+  },'Salvar','Muda só o ritmo do Mercado. Não mexe no dinheiro.');
 }
 function wgNotice(b,g,p){
   const pd=wgPending(g,b,p); if(!pd.ids.length||Math.abs(pd.net)<0.005) return '';
