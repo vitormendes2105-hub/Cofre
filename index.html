@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261105-1">
+<meta name="cofre-version" content="20261106-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -1513,7 +1513,7 @@ function wgBlock(b){
     <div class="wg-r"><span>Período ${wgBR(p.start)} a ${wgBR(p.end)}</span><b>${fmt(p.spentTot)} de ${fmt(p.amount)} · semana ${p.cur+1} de ${p.N}</b></div>
     ${wgNotice(b,g,p)}<button class="obc-l" data-c="${c}" onclick="wgEdit(this.dataset.c)">Ajustar meta</button></div>`;
 }
-function mercadoOn(b){ return norm(b.category)==='mercado'&&budgetBoxIds(b).some(id=>boxById(id)); }
+function mercadoOn(b){ return norm(b.category).indexOf('mercado')>=0&&budgetBoxIds(b).some(id=>boxById(id)); }
 function mercadoCalc(b,today){
   const ids=budgetBoxIds(b).filter(id=>boxById(id)), R=Math.min(28,Math.max(1,Number(b.reposDay)||8));
   const pos=(state.transfers||[]).filter(t=>ids.includes(t.boxId)&&t.amount>0&&t.date<=today);
