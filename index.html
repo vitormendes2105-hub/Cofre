@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261106-2">
+<meta name="cofre-version" content="20261106-3">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -1427,7 +1427,7 @@ function orcamentosViewBase(){
   const eye='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
   const pen='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>';
   const cards=stt.map(({b,s})=>{ const col=s.st==='ok'?'#0b4d3d':'#b0903f', badge=s.st==='exc'?'<span class="badge exc">Excedido</span>':s.st==='done'?'<span class="badge att">Acabou</span>':s.st==='att'?'<span class="badge att">Atenção</span>':'';
-    const pace=s.rest>0?(wgOn(b.category)?`<div class="gsub">Restam <b>${fmt(s.rest)}</b> do limite mensal</div>`:r?`<div class="gsub"><b>${fmt(s.rest/r.days*7)}</b>/semana · restam <b>${fmt(s.rest)}</b></div>`:`<div class="gsub">Restam <b>${fmt(s.rest)}</b></div>`):'';
+    const pace=s.rest>0?(wgOn(b.category)?`<div class="gsub">Restam <b>${fmt(s.rest)}</b> do limite mensal</div>`:r?(r.days<7?`<div class="gsub">Restam <b>${fmt(s.rest)}</b> para os ${r.days<=1?'próximo dia':'próximos '+r.days+' dias'} até o recebimento</div>`:`<div class="gsub"><b>${fmt(s.rest/r.days*7)}</b>/semana · restam <b>${fmt(s.rest)}</b></div>`):`<div class="gsub">Restam <b>${fmt(s.rest)}</b></div>`):'';
     return `<div class="obc ${s.st}"><div class="obc-h"><b>${esc(b.category)}</b><button class="pen" data-id="${b.id}" onclick="editBudget(this.dataset.id)" title="Editar">${pen}</button></div><div class="obc-m">${ringCol(s.p,46,col)}<div style="flex:1"><div class="obc-v">${fmt(s.g)}</div><div class="gsub">de ${fmt(s.L)}</div></div>${badge}</div>${budgetAdjNote(b,m)}${s.rest<0?`<div class="obc-x">Passou do limite em ${fmt(-s.rest)}</div>`:s.rest===0?`<div class="obc-x">Usou o limite total. Não sobrou nada.</div>`:pace}${budgetBoxBlock(b,m,s)}${wgBlock(b)}<button class="obc-l" data-id="${b.id}" onclick="budgetAdjForm(this.dataset.id)">± Ajustar limite deste mês</button><button class="obc-l" data-id="${b.id}" onclick="budgetWhy(this.dataset.id)">? Por que este limite e este gasto</button><button class="obc-l" data-c="${esc(b.category)}" onclick="verTransacoes(this.dataset.c)">${eye} Ver transações</button></div>`; }).join('');
   const orcCats=new Set(bs.map(b=>b.category)), sem={};
   txInMonth(m).filter(t=>t.type==='expense'&&!orcCats.has(t.category)).forEach(t=>{ sem[t.category]=(sem[t.category]||0)+t.amount; });
