@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261114-3">
+<meta name="cofre-version" content="20261114-4">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -2225,11 +2225,10 @@ async function inboxFetchNow(){
     const r0=await sy.client.auth.getSession(); const tok=r0&&r0.data&&r0.data.session&&r0.data.session.access_token;
     if(!tok) throw new Error('sem sessão');
     const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(),60000);
-    const r=await fetch(inboxFnUrl()+'?dry=0&dias=3&atualizar=1',{headers:{Authorization:'Bearer '+tok},signal:ctl.signal}); clearTimeout(to);
+    const r=await fetch(inboxFnUrl()+'?dry=0&dias=3',{headers:{Authorization:'Bearer '+tok},signal:ctl.signal}); clearTimeout(to);
     const j=await r.json().catch(()=>({}));
     if(!r.ok) throw new Error(j.erro||('erro '+r.status));
     await inboxLoad(true);
-    if(j.atualizacao){ const a=j.atualizacao; openForm('Resultado do teste de atualização',[],()=>{},'Fechar','Mostre este texto ao Claude.'); ui.modal.extra='<pre style="white-space:pre-wrap;font-size:12px;max-height:340px;overflow:auto">'+esc(JSON.stringify({patch:a.patch,antes:a.antes,depois:a.depois,erro:a.erro,gravados:j.gravados,lidas:j.lidas},null,1))+'</pre>'; renderModal2(); }
     syToast(j.gravados>0 ? j.gravados+' novo(s) do banco para revisar.' : 'Nada novo no banco agora.');
   }catch(e){ syToast('Não consegui buscar: '+((e&&e.message)||e)); }
   finally{ I.fetching=false; if(!ui.modal&&!ui.confirmBox) render(); }
