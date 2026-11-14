@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261113-1">
+<meta name="cofre-version" content="20261114-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -1973,6 +1973,10 @@ function transactionsView(){
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
         <h2>Lançamentos de ${monthLabel(ui.month)}${filterActive ? ` <span style="font-weight:400;color:var(--muted);font-size:13px;">(${txs.length} de ${allTxs.length})</span>` : ''}</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button class="btn btn-ghost" onclick="inboxFetchNow()" ${ui.inbox&&ui.inbox.fetching?'disabled':''}>${ui.inbox&&ui.inbox.fetching?'⏳ Buscando no banco…':'🏦 Buscar no banco agora'}</button>
+          ${inboxPend().length?`<button class="btn btn-primary" onclick="inboxReview()">Revisar pendências (${inboxPend().length})</button>`:''}
+        </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
         <input type="text" placeholder="🔎 Buscar por descrição..." value="${ui.txFilter.search}" oninput="updateTxFilter('search', this.value)" style="flex:1;min-width:160px;"/>
@@ -2213,7 +2217,7 @@ async function inboxLoad(force){
 async function inboxFetchNow(){
   const I=ui.inbox; if(I.fetching) return;
   if(!sy.session){ syToast('Entre na sua conta de sincronização primeiro.'); return; }
-  I.fetching=true; syToast('Buscando no banco…');
+  I.fetching=true; syToast('Buscando no banco…'); if(!ui.modal&&!ui.confirmBox) render();
   try{
     const r0=await sy.client.auth.getSession(); const tok=r0&&r0.data&&r0.data.session&&r0.data.session.access_token;
     if(!tok) throw new Error('sem sessão');
@@ -2224,7 +2228,7 @@ async function inboxFetchNow(){
     await inboxLoad(true);
     syToast(j.gravados>0 ? j.gravados+' novo(s) do banco para revisar.' : 'Nada novo no banco agora.');
   }catch(e){ syToast('Não consegui buscar: '+((e&&e.message)||e)); }
-  finally{ I.fetching=false; }
+  finally{ I.fetching=false; if(!ui.modal&&!ui.confirmBox) render(); }
 }
 function inboxNum(v){ return String(r2(v)).replace('.',','); }
 function inboxCatNames(tipo){ return [...new Set(categoriesOfType(tipo==='entrada'?'income':'expense').map(c=>c.name))]; }
