@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261106-3">
+<meta name="cofre-version" content="20261113-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -2173,7 +2173,132 @@ function dupCardHtml(){
   const fm=t=>`${t.date.slice(8,10)}/${t.date.slice(5,7)} · ${esc(t.desc||'')} · ${fmt(t.amount)} · ${esc(t.category)}${t.linkedType?' (veio de '+(t.linkedType==='bill'?'Contas a pagar':'Cartões')+')':''}`;
   return `<div class="card" style="border-color:var(--gold)"><div class="eyebrow">Possíveis duplicidades (${d.length})</div><p style="font-size:13px;color:var(--muted);margin:6px 0 10px">Lançamentos parecidos neste mês (mesmo valor, datas próximas e mesma categoria ou descrição). Confira se algum foi lançado duas vezes.</p>${d.slice(0,10).map(([a,b])=>`<div class="plan" style="margin:6px 0"><div style="font-size:13px">${fm(a)}</div><div style="font-size:13px">${fm(b)}</div><div class="sy-row" style="margin-top:8px"><button class="chip" onclick="dupSee('${a.id}')">Ver no extrato</button><button class="chip" onclick="dupDismiss('${a.id}','${b.id}')">Não é duplicado</button></div></div>`).join('')}${d.length>10?'<div class="sy-small">Mostrando 10 de '+d.length+'.</div>':''}</div>`;
 }
-function alertas(){ const a=alertasBase().concat(boxAlerts()); const n=findDuplicates(ui.month).length; if(n) a.push({st:'att',k:'d:'+n,g:'Outros',t:`<b>${n} possível(is) lançamento(s) duplicado(s)</b> neste mês. Confira em Contas a pagar.`}); return a; }
+// ===== Pendentes do banco: Pluggy (Nubank) -> Supabase cofre_inbox -> você revisa e aprova =====
+// Nada vira lançamento sem você aprovar. "Resgate/Aplicação RDB" viram movimento de caixinha (Separar/Devolver), não gasto.
+function inboxFnUrl(){ return String(SYNC_CONFIG.url||'').replace(/\/$/,'') + '/functions/v1/smooth-worker'; }
+ui.inbox = ui.inbox || { rows:null, loadedAt:0, loading:false, fetching:false, skipped:[], cur:null, ov:{}, err:'' };
+const INBOX_TIPOS = { saida:'Saída', entrada:'Entrada', guardar:'Guardar na caixinha', retirar:'Retirar da caixinha' };
+function inboxJaImportados(){
+  const s=new Set((state.inboxDone||[]));
+  (state.transactions||[]).forEach(t=>{ if(t.pluggyId) s.add('p:'+t.pluggyId); });
+  (state.transfers||[]).forEach(t=>{ if(t.pluggyId) s.add('p:'+t.pluggyId); });
+  return s;
+}
+function inboxPend(){ const done=inboxJaImportados(); return ((ui.inbox&&ui.inbox.rows)||[]).filter(r=>!done.has(r.id)&&!done.has('p:'+r.pluggy_id)); }
+function inboxQueue(){ const sk=new Set(ui.inbox.skipped); return inboxPend().filter(r=>!sk.has(r.id)); }
+function inboxDoneAdd(id){ state.inboxDone=(state.inboxDone||[]).filter(x=>x!==id).concat([id]).slice(-3000); }
+async function inboxMark(id,status){
+  try{
+    const r=await sy.client.from('cofre_inbox').update({status}).eq('id',id);
+    if(r.error) throw r.error;
+    ui.inbox.rows=(ui.inbox.rows||[]).filter(x=>x.id!==id);
+    return true;
+  }catch(e){ return false; }
+}
+async function inboxLoad(force){
+  const I=ui.inbox; if(!sy.client||!sy.session||I.loading) return;
+  if(!force && Date.now()-I.loadedAt<60000) return;
+  I.loading=true;
+  try{
+    const r=await sy.client.from('cofre_inbox').select('id,pluggy_id,data,valor,descricao,tipo,status').eq('status','pendente').order('data',{ascending:true}).order('criado_em',{ascending:true}).limit(500);
+    if(r.error) throw r.error;
+    I.rows=r.data||[]; I.loadedAt=Date.now(); I.err='';
+    // o que você já aprovou aqui mas o banco ainda mostra como pendente: acerta em segundo plano
+    const done=new Set(state.inboxDone||[]);
+    I.rows.filter(x=>done.has(x.id)).forEach(x=>{ inboxMark(x.id,'aprovado'); });
+  }catch(e){ I.err=String((e&&e.message)||e); }
+  finally{ I.loading=false; }
+  if(!ui.modal&&!ui.confirmBox) render();
+}
+async function inboxFetchNow(){
+  const I=ui.inbox; if(I.fetching) return;
+  if(!sy.session){ syToast('Entre na sua conta de sincronização primeiro.'); return; }
+  I.fetching=true; syToast('Buscando no banco…');
+  try{
+    const r0=await sy.client.auth.getSession(); const tok=r0&&r0.data&&r0.data.session&&r0.data.session.access_token;
+    if(!tok) throw new Error('sem sessão');
+    const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(),60000);
+    const r=await fetch(inboxFnUrl()+'?dry=0&dias=3',{headers:{Authorization:'Bearer '+tok},signal:ctl.signal}); clearTimeout(to);
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.erro||('erro '+r.status));
+    await inboxLoad(true);
+    syToast(j.gravados>0 ? j.gravados+' novo(s) do banco para revisar.' : 'Nada novo no banco agora.');
+  }catch(e){ syToast('Não consegui buscar: '+((e&&e.message)||e)); }
+  finally{ I.fetching=false; }
+}
+function inboxNum(v){ return String(r2(v)).replace('.',','); }
+function inboxCatNames(tipo){ return [...new Set(categoriesOfType(tipo==='entrada'?'income':'expense').map(c=>c.name))]; }
+function inboxDupNote(row,tipo){
+  if(tipo!=='entrada'&&tipo!=='saida') return '';
+  const type=tipo==='entrada'?'income':'expense';
+  const t=(state.transactions||[]).find(x=>x.type===type&&!x.pluggyId&&Math.abs(x.amount-row.valor)<0.009&&Math.abs((new Date(x.date)-new Date(row.data))/864e5)<=1);
+  return t?'Atenção: já existe um lançamento parecido ('+t.date.slice(8,10)+'/'+t.date.slice(5,7)+' · '+(t.desc||'')+' · '+fmtRaw(t.amount)+'). Se for o mesmo, use Descartar.':'';
+}
+function inboxReview(){
+  const I=ui.inbox; let q=inboxQueue();
+  if(!q.length&&inboxPend().length){ I.skipped=[]; q=inboxQueue(); }
+  if(!q.length){ I.cur=null; syToast('Nenhum lançamento do banco para aprovar.'); return; }
+  I.cur=q[0].id; inboxForm(q[0],I.ov[q[0].id]||{});
+}
+function inboxForm(row,ov){
+  const I=ui.inbox, tipo=ov.tipo||row.tipo, n=inboxQueue().length, total=inboxPend().length;
+  const desc=ov.d!==undefined?ov.d:row.descricao, val=ov.v!==undefined?ov.v:inboxNum(row.valor), dt=ov.dt||row.data;
+  const note='Do banco · '+n+' na fila ('+total+' no total). '+inboxDupNote(row,tipo);
+  const chips=Object.keys(INBOX_TIPOS).map(k=>`<button class="chip${k===tipo?' active':''}" onclick="inboxSwitch('${k}')">${INBOX_TIPOS[k]}</button>`).join(' ');
+  let fields, onOk, okLabel='Aprovar';
+  if(tipo==='saida'||tipo==='entrada'){
+    const type=tipo==='entrada'?'income':'expense', names=inboxCatNames(tipo);
+    const cat=ov.c&&names.includes(ov.c)?ov.c:guessCategory(desc,type);
+    fields=[{id:'d',label:'Descrição',kind:'text',value:desc},{id:'v',label:'Valor (R$)',kind:'money',value:val},{id:'dt',label:'Data',kind:'date',value:dt},
+      {id:'c',label:'Categoria',kind:'select',options:names.length?names:['Outros'],value:cat},{id:'pm',label:'Forma de pagamento',kind:'select',options:PAYMENT_METHODS,value:ov.pm||'Outro'}];
+    onOk=v=>{
+      const a=r2(parseMoney(v.v)); if(a<=0) return 'Digite um valor maior que zero.';
+      if(!isValidIsoDate(v.dt)) return 'Data inválida.';
+      const d=String(v.d||'').trim()||'Lançamento';
+      learnFromCorrection(d,v.c,type);
+      state.transactions.push({id:uid(),date:v.dt,desc:d,paymentMethod:v.pm,amount:a,type,category:v.c,pluggyId:row.pluggy_id});
+      inboxDoneAdd(row.id); saveState(); inboxMark(row.id,'aprovado'); delete I.ov[row.id];
+      setTimeout(inboxReview,60);
+    };
+  } else {
+    const nomes=boxes().map(b=>b.name), sg=suggestBox('',desc);
+    const cxn=ov.box&&nomes.includes(ov.box)?ov.box:(sg?sg.name:(nomes[0]||''));
+    fields=[{id:'v',label:'Valor (R$)',kind:'money',value:val},{id:'dt',label:'Data',kind:'date',value:dt}];
+    if(nomes.length) fields.push({id:'box',label:tipo==='guardar'?'Guardar em qual caixinha?':'Retirar de qual caixinha?',kind:'select',options:nomes,value:cxn});
+    onOk=v=>{
+      if(!nomes.length) return 'Você ainda não tem caixinhas. Crie uma em Caixinhas, ou use Pular/Descartar.';
+      const a=r2(parseMoney(v.v)); if(a<=0) return 'Digite um valor maior que zero.';
+      if(!isValidIsoDate(v.dt)) return 'Data inválida.';
+      const b=boxes().find(x=>x.name===v.box); if(!b) return 'Escolha a caixinha.';
+      if(tipo==='guardar'){ const conta=contaAt(v.dt); if(a>conta+0.004) return 'A conta corrente só tem '+fmtRaw(conta)+'. Se isso não bate com o banco, use “Ajustar ao saldo do banco” (ou Pular/Descartar).'; }
+      else { const bal=boxBalanceAt(b.id,v.dt); if(a>bal+0.004) return 'A caixinha só tem '+fmtRaw(bal)+'. (Ou use Pular/Descartar.)'; }
+      state.transfers=(state.transfers||[]).concat([{id:'f'+uid(),date:v.dt,boxId:b.id,amount:tipo==='guardar'?a:-a,pluggyId:row.pluggy_id}]);
+      inboxDoneAdd(row.id); saveState(); inboxMark(row.id,'aprovado'); delete I.ov[row.id];
+      setTimeout(inboxReview,60);
+    };
+    okLabel=tipo==='guardar'?'Aprovar: guardar':'Aprovar: retirar';
+  }
+  openForm('Lançamento do banco: '+INBOX_TIPOS[tipo],fields,onOk,okLabel,note);
+  ui.modal.extra=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${chips}</div><div style="display:flex;gap:8px"><button class="btn btn-danger" onclick="inboxDiscard()">Descartar</button><button class="btn btn-ghost" onclick="inboxSkip()">Pular</button></div>`;
+  renderModal2();
+}
+function inboxFormVals(){ const g=id=>{ const e=document.getElementById('f_'+id); return e?e.value:undefined; }; return {d:g('d'),v:g('v'),dt:g('dt'),c:g('c'),pm:g('pm'),box:g('box')}; }
+function inboxSwitch(tipo){
+  const I=ui.inbox, row=(I.rows||[]).find(x=>x.id===I.cur); if(!row) return;
+  const v=inboxFormVals(), old=I.ov[row.id]||{};
+  const ov=Object.assign({},old); ['d','v','dt','c','pm','box'].forEach(k=>{ if(v[k]!==undefined&&v[k]!=='') ov[k]=v[k]; }); ov.tipo=tipo;
+  if(tipo==='entrada'||tipo==='saida'){ const names=inboxCatNames(tipo); if(ov.c&&!names.includes(ov.c)) delete ov.c; }
+  I.ov[row.id]=ov; inboxForm(row,ov);
+}
+function inboxSkip(){ const I=ui.inbox; if(I.cur&&!I.skipped.includes(I.cur)) I.skipped.push(I.cur); closeModal(); setTimeout(inboxReview,60); }
+async function inboxDiscard(){
+  const I=ui.inbox, id=I.cur; if(!id) return;
+  const ok=await inboxMark(id,'descartado');
+  if(!ok){ syToast('Não consegui descartar agora (sem conexão?). Tente de novo.'); return; }
+  delete I.ov[id]; closeModal(); setTimeout(inboxReview,60);
+}
+
+function alertas(){ const a=alertasBase().concat(boxAlerts()); try{ const nb=inboxPend().length; if(nb) a.push({st:'att',k:'inbox:'+nb,g:'Outros',t:`<b>${nb} lançamento${nb>1?'s':''} do banco para aprovar</b><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap"><button class="chip" onclick="ui.alertPanel=false;inboxReview()">Revisar</button><button class="chip" onclick="inboxFetchNow()">Buscar agora</button></div>`}); }catch(e){} const n=findDuplicates(ui.month).length; if(n) a.push({st:'att',k:'d:'+n,g:'Outros',t:`<b>${n} possível(is) lançamento(s) duplicado(s)</b> neste mês. Confira em Contas a pagar.`}); return a; }
 
 // ===== Alertas: sino com painel, faixa recolhida, aviso passageiro e "Entendi" =====
 ui.alertDismissed = {};   // "Entendi" vale só para esta visita: ao abrir o app de novo, tudo volta
@@ -3442,6 +3567,7 @@ async function syCheckRemote(force){
   finally{ sy.checking=false; }
 }
 function syTick(){
+  try{ inboxLoad(false); }catch(e){}
   if(!sy.client||!sy.session||sy.paused||sy.reconciling||sy.pushing) return;
   if(!sy.ready){ syReconcile(); return; }
   if(syDirty()) syPush(false); else syCheckRemote(false);
@@ -3532,6 +3658,7 @@ function syOnAuth(event,session){
   if(event==='SIGNED_OUT'){ sy.ready=false; sy.pending=null; sy.paused=false; if(sy.status!=='expired') syStatus('signedout'); return; }
   if(event==='PASSWORD_RECOVERY'){ setTimeout(()=>syOpen('recovery'),0); return; }
   if((event==='SIGNED_IN'||event==='INITIAL_SESSION') && session && !sy.ready && !sy.reconciling && !sy.paused) setTimeout(()=>syReconcile(),0);
+  if(event==='SIGNED_IN'&&session) setTimeout(()=>{ try{ inboxLoad(true); }catch(e){} },1500);
 }
 
 // ---- painel (camada própria, fora do #app: render() não apaga o que você digita) ----
@@ -3614,7 +3741,7 @@ async function syInit(){
   let session=null;
   try{ const r=await sy.client.auth.getSession(); session=r&&r.data?r.data.session:null; }
   catch(e){ syHandleError(e); }
-  if(session){ sy.session=session; syReconcile(); }
+  if(session){ sy.session=session; syReconcile(); try{ inboxLoad(true); }catch(e){} }
   else if(sy.status!=='offline'){ syStatus('signedout'); if(!sy.gateShown){ sy.gateShown=true; syOpen('login'); } }
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='visible') syTick();
