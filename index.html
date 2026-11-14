@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261114-7">
+<meta name="cofre-version" content="20261114-8">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -356,6 +356,14 @@
     #mainnav.nv-top button:not(.navgrip):not(.navtoggle),#mainnav.nv-bottom button:not(.navgrip):not(.navtoggle){padding:0 10px;}
   }
   #mainnav.collapsed.nv-top .navtoggle,#mainnav.collapsed.nv-bottom .navtoggle{width:44px;height:44px;}
+  /* ===== Barra em cima/embaixo: mesmo jeito da lateral (marca, aba verdinha com linha, saldo) e vidro transparente ===== */
+  #mainnav.nv-top:not(.collapsed),#mainnav.nv-bottom:not(.collapsed){background:rgba(255,255,255,.34);backdrop-filter:blur(26px) saturate(1.8);-webkit-backdrop-filter:blur(26px) saturate(1.8);border:1px solid rgba(255,255,255,.6);box-shadow:0 10px 30px -12px rgba(4,42,29,.25),inset 0 1px 0 rgba(255,255,255,.7);}
+  #mainnav.nv-top:not(.collapsed) .nvbrand,#mainnav.nv-bottom:not(.collapsed) .nvbrand{display:block;font-family:var(--serif);font-style:italic;font-size:26px;line-height:1;color:var(--brand);padding:0 10px 0 8px;}
+  #mainnav.nv-top:not(.collapsed) .nvsum,#mainnav.nv-bottom:not(.collapsed) .nvsum{display:flex;align-items:baseline;gap:8px;margin-left:6px;padding:6px 14px;border-radius:16px;color:#fff;background:linear-gradient(150deg,#0b4d3d,#042a1d);white-space:nowrap;}
+  #mainnav.nv-top:not(.collapsed) .nvsum small,#mainnav.nv-bottom:not(.collapsed) .nvsum small{font-size:10.5px;}
+  #mainnav.nv-top:not(.collapsed) .nvsum b,#mainnav.nv-bottom:not(.collapsed) .nvsum b{font-size:17px;margin:0;display:inline;}
+  #mainnav.nv-top button.active,#mainnav.nv-bottom button.active{background:var(--brand-soft);color:var(--brand-deep);font-weight:700;box-shadow:inset 3px 0 0 var(--brand-deep);}
+  @media (max-width:700px){ #mainnav.nv-top .nvbrand,#mainnav.nv-bottom .nvbrand,#mainnav.nv-top .nvsum,#mainnav.nv-bottom .nvsum{display:none!important;} }
   /* ===== Barra lateral larga (telas grandes) ===== */
   .fl,.nvbrand,.nvlabel,.nvsum,.pagetitle{display:none;}
   #mainnav .sh{display:inline;}
@@ -1645,8 +1653,8 @@ function navRows(){
 
 // ===== Barra lateral: resumo e títulos =====
 const PAGE_TITLES={dashboard:'Painel',balanco:'Balanço do mês',orcamentos:'Orçamentos',caixinhas:'Caixinhas',lancamentos:'Lançamentos',contas:'Contas a pagar',cartoes:'Cartões & Parcelas',categorias:'Configurações',importar:'Importar'};
-function navSummary(){ if(navCollapsed()) return ''; let b=0; try{ b=monthTotals(ui.month).balance; }catch(_){}
-  return `<div class="nvsum"><small>Saldo de ${monthLabel(ui.month)}</small><b>${fmt(b)}</b></div>`; }
+function navSummary(){ if(navCollapsed()) return ''; let b=0; try{ const m=ui.month; b=contaAt(m===curMonth()?todayISO():boxEnd(m)); }catch(_){}
+  return `<div class="nvsum"><small>Na conta corrente</small><b>${fmt(b)}</b></div>`; }
 
 // ===== Blocos que você organiza: mover, puxar o cantinho, esticar, ocultar; layouts separados p/ tela horizontal e vertical =====
 // Vale para o Painel e para todas as outras abas (cada aba guarda o próprio layout).
