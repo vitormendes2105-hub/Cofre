@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261114-6">
+<meta name="cofre-version" content="20261114-7">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -1377,6 +1377,7 @@ function settingsView(){
   const row=(t,d,ctl)=>`<div class="commit-row" style="gap:16px;align-items:center"><span><b>${t}</b><br><small style="color:var(--muted)">${d}</small></span><span>${ctl}</span></div>`;
   const sel=(k,vals,cur,suf)=>`<select onchange="setSetting('${k}',Number(this.value))" style="width:auto">${vals.map(v=>`<option value="${v}" ${v===cur?'selected':''}>${v}${suf}</option>`).join('')}</select>`;
   return `<div class="card"><h2>Configurações</h2>
+    ${row('Link do Nubank no Meu Pluggy','Usado pelo botão Atualizar no Meu Pluggy, na tela Lançamentos.',`<button class="chip" onclick="meuPluggyLink(true)">${state.meuPluggyLink?'Trocar link':'Definir link'}</button>`)}
     ${row('Dia em que você recebe',w?`Hoje: ${w.from!==w.to?'dias '+w.from+' a '+w.to:'dia '+w.to} (${w.manual?'definido por você':'detectado'}). Usado na sugestão por dia e por semana.`:'Sem entradas para detectar.',`<button class="chip" onclick="setPayday()">Ajustar dias</button>`)}
     ${row('Avisar a partir de','Quando um orçamento chega a esta porcentagem do limite, aparece o alerta.',sel('alertPct',[60,70,80,90],st.alertPct||80,'%'))}
     ${row('Meses usados nas médias','Quantos meses anteriores entram na projeção, no gasto variável e na detecção do dia de recebimento.',sel('months',[1,2,3,4,5,6],st.months||3,''))}
@@ -1974,9 +1975,9 @@ function transactionsView(){
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
         <h2>Lançamentos de ${monthLabel(ui.month)}${filterActive ? ` <span style="font-weight:400;color:var(--muted);font-size:13px;">(${txs.length} de ${allTxs.length})</span>` : ''}</h2>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-          <button class="btn btn-ghost" onclick="inboxFetchNow()" ${ui.inbox&&ui.inbox.fetching?'disabled':''}>${ui.inbox&&ui.inbox.fetching?'⏳ Buscando no banco…':'🏦 Buscar no banco agora'}</button>
-          <button class="btn btn-ghost" onclick="meuPluggyAbrir()">🔄 Atualizar no Meu Pluggy</button>${state.meuPluggyLink?'<button class="chip" onclick="meuPluggyLink(true)">Trocar link</button>':''}
-          ${inboxPend().length?`<button class="btn btn-primary" onclick="inboxReview()">Revisar pendências (${inboxPend().length})</button>`:''}
+          <button class="chip" onclick="inboxFetchNow()" ${ui.inbox&&ui.inbox.fetching?'disabled':''}>${ui.inbox&&ui.inbox.fetching?'Buscando…':'Buscar no banco'}</button>
+          <button class="chip" onclick="meuPluggyAbrir()">Atualizar no Meu Pluggy</button>
+          ${inboxPend().length?`<button class="chip on" onclick="inboxReview()">Revisar (${inboxPend().length})</button>`:''}
         </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
