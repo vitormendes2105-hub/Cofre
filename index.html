@@ -2177,7 +2177,7 @@ function dupCardHtml(){
 // Nada vira lançamento sem você aprovar. "Resgate/Aplicação RDB" viram movimento de caixinha (Separar/Devolver), não gasto.
 function inboxFnUrl(){ return String(SYNC_CONFIG.url||'').replace(/\/$/,'') + '/functions/v1/smooth-worker'; }
 ui.inbox = ui.inbox || { rows:null, loadedAt:0, loading:false, fetching:false, skipped:[], cur:null, ov:{}, err:'' };
-const INBOX_TIPOS = { saida:'Saída', entrada:'Entrada', guardar:'Guardar na caixinha', retirar:'Retirar da caixinha' };
+const INBOX_TIPOS = { saida:'Saída', entrada:'Entrada', guardar:'Separar para a caixinha', retirar:'Devolver para a conta corrente' };
 function inboxJaImportados(){
   const s=new Set((state.inboxDone||[]));
   (state.transactions||[]).forEach(t=>{ if(t.pluggyId) s.add('p:'+t.pluggyId); });
@@ -2244,7 +2244,7 @@ function inboxForm(row,ov){
   const I=ui.inbox, tipo=ov.tipo||row.tipo, n=inboxQueue().length, total=inboxPend().length;
   const desc=ov.d!==undefined?ov.d:row.descricao, val=ov.v!==undefined?ov.v:inboxNum(row.valor), dt=ov.dt||row.data;
   const note='Do banco · '+n+' na fila ('+total+' no total). '+inboxDupNote(row,tipo);
-  const chips=Object.keys(INBOX_TIPOS).map(k=>`<button class="chip${k===tipo?' active':''}" onclick="inboxSwitch('${k}')">${INBOX_TIPOS[k]}</button>`).join(' ');
+  const chips=Object.keys(INBOX_TIPOS).map(k=>`<button class="chip${k===tipo?' on':''}" onclick="inboxSwitch('${k}')">${INBOX_TIPOS[k]}</button>`).join(' ');
   let fields, onOk, okLabel='Aprovar';
   if(tipo==='saida'||tipo==='entrada'){
     const type=tipo==='entrada'?'income':'expense', names=inboxCatNames(tipo);
@@ -2264,7 +2264,7 @@ function inboxForm(row,ov){
     const nomes=boxes().map(b=>b.name), sg=suggestBox('',desc);
     const cxn=ov.box&&nomes.includes(ov.box)?ov.box:(sg?sg.name:(nomes[0]||''));
     fields=[{id:'v',label:'Valor (R$)',kind:'money',value:val},{id:'dt',label:'Data',kind:'date',value:dt}];
-    if(nomes.length) fields.push({id:'box',label:tipo==='guardar'?'Guardar em qual caixinha?':'Retirar de qual caixinha?',kind:'select',options:nomes,value:cxn});
+    if(nomes.length) fields.push({id:'box',label:tipo==='guardar'?'Separar para qual caixinha?':'Devolver de qual caixinha?',kind:'select',options:nomes,value:cxn});
     onOk=v=>{
       if(!nomes.length) return 'Você ainda não tem caixinhas. Crie uma em Caixinhas, ou use Pular/Descartar.';
       const a=r2(parseMoney(v.v)); if(a<=0) return 'Digite um valor maior que zero.';
@@ -2276,7 +2276,7 @@ function inboxForm(row,ov){
       inboxDoneAdd(row.id); saveState(); inboxMark(row.id,'aprovado'); delete I.ov[row.id];
       setTimeout(inboxReview,60);
     };
-    okLabel=tipo==='guardar'?'Aprovar: guardar':'Aprovar: retirar';
+    okLabel=tipo==='guardar'?'Aprovar: separar para a caixinha':'Aprovar: devolver para a conta';
   }
   openForm('Lançamento do banco: '+INBOX_TIPOS[tipo],fields,onOk,okLabel,note);
   ui.modal.extra=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${chips}</div><div style="display:flex;gap:8px"><button class="btn btn-danger" onclick="inboxDiscard()">Descartar</button><button class="btn btn-ghost" onclick="inboxSkip()">Pular</button></div>`;
