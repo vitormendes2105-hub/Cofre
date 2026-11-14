@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261114-4">
+<meta name="cofre-version" content="20261114-5">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -2189,7 +2189,25 @@ function inboxJaImportados(){
   return s;
 }
 function inboxPend(){ const done=inboxJaImportados(); return ((ui.inbox&&ui.inbox.rows)||[]).filter(r=>!done.has(r.id)&&!done.has('p:'+r.pluggy_id)); }
-function inboxQueue(){ const sk=new Set(ui.inbox.skipped); return inboxPend().filter(r=>!sk.has(r.id)); }
+function inboxDias(a,b){ return Math.abs((new Date(a)-new Date(b))/864e5); }
+// Resgate RDB já coberto por uma compra paga com a caixinha (o app já tirou da caixinha): um para um, mesmo valor, até 1 dia de diferença
+function inboxCovered(){
+  const used=new Set(), out=[];
+  inboxPend().filter(r=>r.tipo==='retirar').forEach(r=>{
+    const t=(state.transactions||[]).find(x=>x.type==='expense'&&x.boxId&&!used.has(x.id)&&(Math.abs(x.amount-r.valor)<0.009||Math.abs((x.boxAmt||0)-r.valor)<0.009)&&inboxDias(x.date,r.data)<=1);
+    if(t){ used.add(t.id); out.push(r); }
+  });
+  return out;
+}
+// Resgate que espera a compra do mesmo valor ainda pendente: só aparece se não houver outra coisa na fila
+function inboxHeld(r,pend){ return r.tipo==='retirar'&&pend.some(x=>x.tipo==='saida'&&Math.abs(x.valor-r.valor)<0.009&&inboxDias(x.data,r.data)<=1); }
+function inboxAutoCover(){
+  const cov=inboxCovered(); if(!cov.length) return;
+  cov.forEach(r=>{ inboxDoneAdd(r.id); inboxMark(r.id,'descartado'); });
+  saveState();
+  try{ syToast(cov.length===1?'Resgate de '+fmtRaw(cov[0].valor)+' coberto pela compra paga com a caixinha.':cov.length+' resgates cobertos por compras pagas com a caixinha.'); }catch(e){}
+}
+function inboxQueue(){ const sk=new Set(ui.inbox.skipped), pend=inboxPend(), q=pend.filter(r=>!sk.has(r.id)), free=q.filter(r=>!inboxHeld(r,pend)); return free.length?free:q; }
 function inboxDoneAdd(id){ state.inboxDone=(state.inboxDone||[]).filter(x=>x!==id).concat([id]).slice(-3000); }
 async function inboxMark(id,status){
   try{
@@ -2213,6 +2231,7 @@ async function inboxLoad(force){
     // o que você já aprovou aqui mas o banco ainda mostra como pendente: acerta em segundo plano
     const done=new Set(state.inboxDone||[]);
     I.rows.filter(x=>done.has(x.id)).forEach(x=>{ inboxMark(x.id,'aprovado'); });
+    inboxAutoCover();
   }catch(e){ I.err=String((e&&e.message)||e); }
   finally{ I.loading=false; }
   if(!ui.modal&&!ui.confirmBox) render();
@@ -2984,7 +3003,7 @@ function saveTx(){
     state.transactions.push(nt);
   }
   cleanupEmptyAutoCategories(); saveState(); closeModal();
-  if(inb){ inboxMark(inb,'aprovado'); delete ui.inbox.ov[inb]; setTimeout(inboxReview,60); }
+  if(inb){ inboxMark(inb,'aprovado'); delete ui.inbox.ov[inb]; inboxAutoCover(); setTimeout(inboxReview,60); }
   if(boxId && r2(amount-boxAmt)>0.004){ try{ syToast('A caixinha '+boxById(boxId).name+' não tinha tudo: '+fmtRaw(r2(amount-boxAmt))+' saíram da conta corrente.'); }catch(e){} }
 }
 function saveCard(){
