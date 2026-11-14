@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261114-5">
+<meta name="cofre-version" content="20261114-6">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -1975,6 +1975,7 @@ function transactionsView(){
         <h2>Lançamentos de ${monthLabel(ui.month)}${filterActive ? ` <span style="font-weight:400;color:var(--muted);font-size:13px;">(${txs.length} de ${allTxs.length})</span>` : ''}</h2>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
           <button class="btn btn-ghost" onclick="inboxFetchNow()" ${ui.inbox&&ui.inbox.fetching?'disabled':''}>${ui.inbox&&ui.inbox.fetching?'⏳ Buscando no banco…':'🏦 Buscar no banco agora'}</button>
+          <button class="btn btn-ghost" onclick="meuPluggyAbrir()">🔄 Atualizar no Meu Pluggy</button>${state.meuPluggyLink?'<button class="chip" onclick="meuPluggyLink(true)">Trocar link</button>':''}
           ${inboxPend().length?`<button class="btn btn-primary" onclick="inboxReview()">Revisar pendências (${inboxPend().length})</button>`:''}
         </div>
       </div>
@@ -2235,6 +2236,18 @@ async function inboxLoad(force){
   }catch(e){ I.err=String((e&&e.message)||e); }
   finally{ I.loading=false; }
   if(!ui.modal&&!ui.confirmBox) render();
+}
+function meuPluggyLink(troca,abrir){
+  openForm('Link do Nubank no Meu Pluggy',[{id:'l',label:'Cole aqui o link (toque em "Copiar link" na página do Nubank no Meu Pluggy)',kind:'text',value:troca?(state.meuPluggyLink||''):'',placeholder:'https://meu.pluggy.ai/...'}],v=>{
+    const l=String(v.l||'').trim();
+    if(!/^https:\/\/([a-z0-9-]+\.)*pluggy\.ai\//i.test(l)) return 'O link precisa começar com https://meu.pluggy.ai/';
+    state.meuPluggyLink=l; saveState();
+    if(abrir) window.open(l,'_blank');
+  },'Salvar','Guardado só no seu Cofre. Depois de tocar em Atualizar lá, volte para o Cofre e toque em Buscar no banco agora.');
+}
+function meuPluggyAbrir(){
+  if(!state.meuPluggyLink){ meuPluggyLink(false,true); return; }
+  window.open(state.meuPluggyLink,'_blank');
 }
 async function inboxFetchNow(){
   const I=ui.inbox; if(I.fetching) return;
