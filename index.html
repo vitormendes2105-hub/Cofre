@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261114-1">
+<meta name="cofre-version" content="20261114-2">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -2204,9 +2204,12 @@ async function inboxLoad(force){
   if(!force && Date.now()-I.loadedAt<60000) return;
   I.loading=true;
   try{
-    const r=await sy.client.from('cofre_inbox').select('id,pluggy_id,data,valor,descricao,tipo,status').eq('status','pendente').order('data',{ascending:true}).order('criado_em',{ascending:true}).limit(500);
+    const r=await sy.client.from('cofre_inbox').select('id,pluggy_id,data,valor,descricao,tipo,status,criado_em').eq('status','pendente').order('data',{ascending:true}).order('criado_em',{ascending:true}).limit(500);
     if(r.error) throw r.error;
-    I.rows=r.data||[]; I.loadedAt=Date.now(); I.err='';
+    // mesmo dia e mesma hora de gravação: o banco manda do mais novo para o mais antigo, então inverto o grupo
+    const ord=[]; let g=[]; const flush=()=>{ g.reverse().forEach(x=>ord.push(x)); g=[]; };
+    (r.data||[]).forEach(x=>{ if(g.length&&(g[0].data!==x.data||g[0].criado_em!==x.criado_em)) flush(); g.push(x); }); flush();
+    I.rows=ord; I.loadedAt=Date.now(); I.err='';
     // o que você já aprovou aqui mas o banco ainda mostra como pendente: acerta em segundo plano
     const done=new Set(state.inboxDone||[]);
     I.rows.filter(x=>done.has(x.id)).forEach(x=>{ inboxMark(x.id,'aprovado'); });
@@ -2244,13 +2247,24 @@ function inboxReview(){
   if(!q.length){ I.cur=null; syToast('Nenhum lançamento do banco para aprovar.'); return; }
   I.cur=q[0].id; inboxForm(q[0],I.ov[q[0].id]||{});
 }
+function inboxChips(cur){
+  const L={normal:'Lançamento normal',guardar:INBOX_TIPOS.guardar,retirar:INBOX_TIPOS.retirar};
+  return Object.keys(L).map(k=>`<button class="chip${k===cur?' on':''}" onclick="inboxSwitch('${k}')">${k===cur?'✓ ':''}${L[k]}</button>`).join(' ');
+}
 function inboxForm(row,ov){
   const I=ui.inbox, tipo=ov.tipo||row.tipo, n=inboxQueue().length, total=inboxPend().length;
   const desc=ov.d!==undefined?ov.d:row.descricao, val=ov.v!==undefined?ov.v:inboxNum(row.valor), dt=ov.dt||row.data;
   const note='Do banco · '+n+' na fila ('+total+' no total). '+inboxDupNote(row,tipo);
-  const chips=Object.keys(INBOX_TIPOS).map(k=>`<button class="chip${k===tipo?' on':''}" onclick="inboxSwitch('${k}')">${INBOX_TIPOS[k]}</button>`).join(' ');
+  const chips=inboxChips(tipo==='guardar'||tipo==='retirar'?tipo:'normal');
   let fields, onOk, okLabel='Aprovar';
   if(tipo==='saida'||tipo==='entrada'){
+    const type0=tipo==='entrada'?'income':'expense', names0=inboxCatNames(tipo);
+    const cat0=ov.c&&names0.includes(ov.c)?ov.c:guessCategory(desc,type0), sg0=suggestBox(cat0,desc);
+    ui.modal={type:'tx',edit:null,inboxId:row.id,inboxNote:note,date:dt,desc,paymentMethod:ov.pm||'Outro',amount:String(r2(parseMoney(val))),category:cat0,txType:type0,boxId:ov.pay!==undefined?ov.pay:(sg0?sg0.id:'conta'),boxAuto:ov.pay===undefined};
+    renderModal2(); try{ txBoxHint(); }catch(e){}
+    return;
+  }
+  if(false){
     const type=tipo==='entrada'?'income':'expense', names=inboxCatNames(tipo);
     const cat=ov.c&&names.includes(ov.c)?ov.c:guessCategory(desc,type);
     fields=[{id:'d',label:'Descrição',kind:'text',value:desc},{id:'v',label:'Valor (R$)',kind:'money',value:val},{id:'dt',label:'Data',kind:'date',value:dt},
@@ -2286,11 +2300,13 @@ function inboxForm(row,ov){
   ui.modal.extra=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${chips}</div><div style="display:flex;gap:8px"><button class="btn btn-danger" onclick="inboxDiscard()">Descartar</button><button class="btn btn-ghost" onclick="inboxSkip()">Pular</button></div>`;
   renderModal2();
 }
-function inboxFormVals(){ const g=id=>{ const e=document.getElementById('f_'+id); return e?e.value:undefined; }; return {d:g('d'),v:g('v'),dt:g('dt'),c:g('c'),pm:g('pm'),box:g('box')}; }
+function inboxFormVals(){ const g=id=>{ const e=document.getElementById(id); return e?e.value:undefined; }; return {d:g('f_d')||g('mDesc'),v:g('f_v')||g('mAmount'),dt:g('f_dt')||g('mDate'),c:g('f_c')||g('mCategory'),pm:g('f_pm')||g('mPaymentMethod'),box:g('f_box'),pay:g('mBox')}; }
 function inboxSwitch(tipo){
   const I=ui.inbox, row=(I.rows||[]).find(x=>x.id===I.cur); if(!row) return;
   const v=inboxFormVals(), old=I.ov[row.id]||{};
-  const ov=Object.assign({},old); ['d','v','dt','c','pm','box'].forEach(k=>{ if(v[k]!==undefined&&v[k]!=='') ov[k]=v[k]; }); ov.tipo=tipo;
+  if(tipo==='normal') tipo=(row.tipo==='retirar')?'entrada':(row.tipo==='guardar')?'saida':row.tipo;
+  const ov=Object.assign({},old); ['d','v','dt','c','pm','box','pay'].forEach(k=>{ if(v[k]!==undefined&&v[k]!=='') ov[k]=v[k]; }); ov.tipo=tipo;
+  if(/^\d+\.\d{1,2}$/.test(String(ov.v||''))) ov.v=String(ov.v).replace('.',',');
   if(tipo==='entrada'||tipo==='saida'){ const names=inboxCatNames(tipo); if(ov.c&&!names.includes(ov.c)) delete ov.c; }
   I.ov[row.id]=ov; inboxForm(row,ov);
 }
@@ -2812,11 +2828,11 @@ function renderModal(){
   if(m.type==='tx'){
     html = `
       <div class="modal">
-        <h2>${m.edit ? 'Editar lançamento' : 'Novo lançamento'}</h2>
-        <div class="seg">
+        <h2>${m.inboxId ? 'Lançamento do banco' : (m.edit ? 'Editar lançamento' : 'Novo lançamento')}</h2>
+        ${m.inboxId ? `<p class="gsub" style="margin:0 0 10px">${esc(m.inboxNote||'')}</p><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${inboxChips('normal')}</div>` : `<div class="seg">
           <button class="${m.txType==='expense'?'active expense':''}" onclick="ui.modal.txType='expense'; renderModal2()">Saída</button>
           <button class="${m.txType==='income'?'active income':''}" onclick="ui.modal.txType='income'; renderModal2()">Entrada</button>
-        </div>
+        </div>`}
         <div class="field"><label>Valor (R$)</label><input id="mAmount" type="number" step="0.01" value="${m.amount}" oninput="txBoxHint()" autofocus/></div>
         <div class="field"><label>Descrição</label><input id="mDesc" value="${m.desc}" onchange="txCategoryChanged(document.getElementById('mCategory').value)"/></div>
         <div class="field"><label>Forma de pagamento</label>
@@ -2835,9 +2851,10 @@ function renderModal(){
           </select>
           <div id="mBoxHint" class="gsub" style="margin-top:4px"></div>
         </div>`:''}
-        <div style="display:flex;gap:10px;margin-top:16px;">
-          <button class="btn btn-primary" onclick="saveTx()">Salvar</button>
-          <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+        <div style="display:flex;gap:10px;margin-top:16px;${m.inboxId?'flex-wrap:wrap;':''}">
+          <button class="btn btn-primary" onclick="saveTx()">${m.inboxId?'Aprovar':'Salvar'}</button>
+          <button class="btn btn-ghost" onclick="closeModal()">${m.inboxId?'Parar revisão':'Cancelar'}</button>
+          ${m.inboxId?'<button class="btn btn-ghost" onclick="inboxSkip()">Pular</button><button class="btn btn-danger" onclick="inboxDiscard()">Descartar</button>':''}
         </div>
       </div>`;
   }
@@ -2941,6 +2958,7 @@ function renderModal2(){
   renderModal();
 }
 function saveTx(){
+  const inb = ui.modal&&ui.modal.inboxId||null;
   const amount = parseFloat(document.getElementById('mAmount').value);
   const desc = document.getElementById('mDesc').value || 'Lançamento';
   const paymentMethod = document.getElementById('mPaymentMethod').value;
@@ -2962,9 +2980,11 @@ function saveTx(){
   } else {
     txId=uid(); const nt={id:txId, amount, desc, paymentMethod, date, category, type: ui.modal.txType};
     if(boxId){ nt.boxId=boxId; nt.boxAmt=boxAmt; }
+    if(inb){ const rw=((ui.inbox&&ui.inbox.rows)||[]).find(x=>x.id===inb); if(rw) nt.pluggyId=rw.pluggy_id; inboxDoneAdd(inb); }
     state.transactions.push(nt);
   }
   cleanupEmptyAutoCategories(); saveState(); closeModal();
+  if(inb){ inboxMark(inb,'aprovado'); delete ui.inbox.ov[inb]; setTimeout(inboxReview,60); }
   if(boxId && r2(amount-boxAmt)>0.004){ try{ syToast('A caixinha '+boxById(boxId).name+' não tinha tudo: '+fmtRaw(r2(amount-boxAmt))+' saíram da conta corrente.'); }catch(e){} }
 }
 function saveCard(){
