@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261114-8">
+<meta name="cofre-version" content="20261115-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -2232,7 +2232,8 @@ async function inboxLoad(force){
   if(!force && Date.now()-I.loadedAt<60000) return;
   I.loading=true;
   try{
-    const r=await sy.client.from('cofre_inbox').select('id,pluggy_id,data,valor,descricao,tipo,status,criado_em').eq('status','pendente').order('data',{ascending:true}).order('criado_em',{ascending:true}).limit(500);
+    let r=await sy.client.from('cofre_inbox').select('id,pluggy_id,data,valor,descricao,tipo,status,criado_em,forma').eq('status','pendente').order('data',{ascending:true}).order('criado_em',{ascending:true}).limit(500);
+    if(r.error&&/forma/i.test(String(r.error.message||''))) r=await sy.client.from('cofre_inbox').select('id,pluggy_id,data,valor,descricao,tipo,status,criado_em').eq('status','pendente').order('data',{ascending:true}).order('criado_em',{ascending:true}).limit(500);
     if(r.error) throw r.error;
     // mesmo dia e mesma hora de gravação: o banco manda do mais novo para o mais antigo, então inverto o grupo
     const ord=[]; let g=[]; const flush=()=>{ g.reverse().forEach(x=>ord.push(x)); g=[]; };
@@ -2301,7 +2302,7 @@ function inboxForm(row,ov){
   if(tipo==='saida'||tipo==='entrada'){
     const type0=tipo==='entrada'?'income':'expense', names0=inboxCatNames(tipo);
     const cat0=ov.c&&names0.includes(ov.c)?ov.c:guessCategory(desc,type0), sg0=suggestBox(cat0,desc);
-    ui.modal={type:'tx',edit:null,inboxId:row.id,inboxNote:note,date:dt,desc,paymentMethod:ov.pm||'Outro',amount:String(r2(parseMoney(val))),category:cat0,txType:type0,boxId:ov.pay!==undefined?ov.pay:(sg0?sg0.id:'conta'),boxAuto:ov.pay===undefined};
+    ui.modal={type:'tx',edit:null,inboxId:row.id,inboxNote:note,date:dt,desc,paymentMethod:ov.pm||row.forma||'Outro',amount:String(r2(parseMoney(val))),category:cat0,txType:type0,boxId:ov.pay!==undefined?ov.pay:(sg0?sg0.id:'conta'),boxAuto:ov.pay===undefined};
     renderModal2(); try{ txBoxHint(); }catch(e){}
     return;
   }
