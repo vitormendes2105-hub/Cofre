@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261116-2">
+<meta name="cofre-version" content="20261116-3">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -1662,8 +1662,11 @@ function wgOff(cat){ const g=wgGoals()[cat]; if(g){ g.on=false; saveState(); ren
 // ===== Barra de abas: posição, recolher e arrastar =====
 const NAVGRIP='<span class="navgrip" title="Arraste para mover"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>';
 function navPos(){ return (state.settings||{}).navPos||(window.innerWidth>=900?'left':'bottom'); }
-function navAlign(){ const a=(state.settings||{}).navAlign; return a==='start'||a==='end'?a:'center'; }
-function navShift(){ return Math.round(Number((state.settings||{}).navShift)||0); }
+function navVert(){ const p=navPos(); return p==='left'||p==='right'; }
+// Só nas laterais a barra pode ser ajustada; em cima/embaixo fica sempre no centro
+function navAlign(){ const a=(state.settings||{}).navAlign; return navVert()&&(a==='start'||a==='end')?a:'center'; }
+function navShift(){ return navVert()?Math.round(Number((state.settings||{}).navShift)||0):0; }
+function navSetPos(v){ state.settings=state.settings||{}; state.settings.navPos=v; state.settings.navShift=0; state.settings.navAlign='center'; saveState(); render(); }
 function navSetAlign(a){ state.settings=state.settings||{}; state.settings.navAlign=a; state.settings.navShift=0; saveState(); render(); }
 function navCollapsible(){ return (state.settings||{}).navCollapsible!==false; }
 function navCollapsed(){ return navCollapsible()&&!!(state.settings||{}).navCollapsed; }
@@ -1675,8 +1678,8 @@ function navRows(){
   const row=(t,d,ctl)=>`<div class="commit-row" style="gap:16px;align-items:center"><span><b>${t}</b><br><small style="color:var(--muted)">${d}</small></span><span>${ctl}</span></div>`;
   const opts=[['left','Esquerda'],['right','Direita'],['top','Em cima'],['bottom','Embaixo']];
   return row('Barra de abas recolhível','Mostra um botão para recolher a barra e abrir de novo, como a paleta de canetas das Notas. Desligue para a barra ficar sempre aberta.',`<button class="chip ${navCollapsible()?'on':''}" onclick="setSetting('navCollapsible',${!navCollapsible()})">${navCollapsible()?'Ligado':'Desligado'}</button>`)
-   +row('Alinhamento da barra','Centralizada, no começo ou no fim da borda. Para ajustar um pouquinho, arraste a barra pelos pontinhos e solte.',`<span style="display:flex;gap:6px;flex-wrap:wrap">${[['start','Início'],['center','Centro'],['end','Fim']].map(([v,l])=>`<button class="chip ${navAlign()===v&&!navShift()?'on':''}" onclick="navSetAlign('${v}')">${l}</button>`).join('')}</span>`)
-   +row('Posição da barra','Você também pode arrastar a barra pelos pontinhos e soltar perto de uma borda. Em cima e embaixo ela fica na horizontal.',`<select onchange="setSetting('navPos',this.value)" style="width:auto">${opts.map(([v,l])=>`<option value="${v}" ${v===navPos()?'selected':''}>${l}</option>`).join('')}</select>`);
+   +(navVert()?row('Alinhamento da barra','Centralizada, no começo ou no fim da borda. Para ajustar um pouquinho, arraste a barra pelos pontinhos e solte.',`<span style="display:flex;gap:6px;flex-wrap:wrap">${[['start','Início'],['center','Centro'],['end','Fim']].map(([v,l])=>`<button class="chip ${navAlign()===v&&!navShift()?'on':''}" onclick="navSetAlign('${v}')">${l}</button>`).join('')}</span>`):'')
+   +row('Posição da barra','Você também pode arrastar a barra pelos pontinhos e soltar perto de uma borda. Em cima e embaixo ela fica na horizontal.',`<select onchange="navSetPos(this.value)" style="width:auto">${opts.map(([v,l])=>`<option value="${v}" ${v===navPos()?'selected':''}>${l}</option>`).join('')}</select>`);
 }
 (function(){
   let d=null;
@@ -1686,7 +1689,7 @@ function navRows(){
     const x=e.clientX,y=e.clientY,dist={left:x,right:innerWidth-x,top:y,bottom:innerHeight-y}; const pos=Object.keys(dist).sort((a,b)=>dist[a]-dist[b])[0];
     const r=dd.nav.getBoundingClientRect(), vert=(pos==='left'||pos==='right'), cen=vert?(r.top+r.height/2):(r.left+r.width/2), mid=vert?innerHeight/2:innerWidth/2, lim=Math.max(0,mid-(vert?r.height:r.width)/2-8);
     let sh=Math.round(cen-mid); sh=Math.max(-lim,Math.min(lim,sh)); if(Math.abs(sh)<14) sh=0;
-    state.settings=state.settings||{}; state.settings.navAlign='center'; state.settings.navShift=sh; setSetting('navPos',pos); };
+    state.settings=state.settings||{}; state.settings.navAlign='center'; state.settings.navShift=vert?sh:0; setSetting('navPos',pos); };
   document.addEventListener('pointerup',end); document.addEventListener('pointercancel',end);
 })();
 
