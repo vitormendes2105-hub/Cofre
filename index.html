@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261115-1">
+<meta name="cofre-version" content="20261116-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -367,7 +367,7 @@
   /* ===== Barra lateral larga (telas grandes) ===== */
   .fl,.nvbrand,.nvlabel,.nvsum,.pagetitle{display:none;}
   #mainnav .sh{display:inline;}
-  @media (min-width:900px){
+  @media (min-width:700px){
     #mainnav.nv-left:not(.collapsed),#mainnav.nv-right:not(.collapsed){top:12px;bottom:12px;transform:none;max-height:none;width:236px;padding:20px 12px 14px;gap:2px;align-items:stretch;justify-content:flex-start;border-radius:28px;overflow-y:auto;}
     #mainnav.nv-left{left:12px;} #mainnav.nv-right{right:12px;}
     #mainnav.nv-left:not(.collapsed) .navgrip,#mainnav.nv-right:not(.collapsed) .navgrip{position:absolute;top:16px;right:14px;}
@@ -385,6 +385,28 @@
     body[data-nav=left]:not(.navc) .app{padding-left:274px;} body[data-nav=right]:not(.navc) .app{padding-right:274px;}
     body[data-nav=left]:not(.navc) .wordmark,body[data-nav=right]:not(.navc) .wordmark{display:none;}
     body[data-nav=left]:not(.navc) .pagetitle,body[data-nav=right]:not(.navc) .pagetitle{display:inline;font-family:var(--serif);font-size:30px;color:var(--ink);}
+  }
+  /* Em pé (iPad vertical): mesma barra lateral da horizontal, só mais estreita */
+  @media (min-width:700px) and (max-width:899px){
+    #mainnav.nv-left:not(.collapsed),#mainnav.nv-right:not(.collapsed){width:176px;padding:16px 8px 12px;}
+    #mainnav.nv-left:not(.collapsed) .nvbrand,#mainnav.nv-right:not(.collapsed) .nvbrand{font-size:28px;padding:0 10px 6px;}
+    #mainnav.nv-left:not(.collapsed) .nvlabel,#mainnav.nv-right:not(.collapsed) .nvlabel{padding:10px 10px 4px;font-size:9.5px;}
+    #mainnav.nv-left:not(.collapsed) button:not(.navgrip):not(.navtoggle),#mainnav.nv-right:not(.collapsed) button:not(.navgrip):not(.navtoggle){height:40px;gap:9px;padding:0 10px;font-size:13px;}
+    #mainnav.nv-left:not(.collapsed) .fl,#mainnav.nv-right:not(.collapsed) .fl{font-size:13px;}
+    #mainnav.nv-left:not(.collapsed) .nvsum,#mainnav.nv-right:not(.collapsed) .nvsum{padding:12px 12px;border-radius:18px;}
+    .nvsum small{font-size:11px;} .nvsum b{font-size:21px;}
+    body[data-nav=left]:not(.navc) .app{padding-left:204px;} body[data-nav=right]:not(.navc) .app{padding-right:204px;}
+  }
+  /* Barra em cima/embaixo: um pouco mais alta, sem encolher os botões (sem texto por cima do ícone) */
+  @media (min-width:701px){
+    #mainnav.nv-top:not(.collapsed),#mainnav.nv-bottom:not(.collapsed){padding:9px 12px;gap:4px;}
+    #mainnav.nv-top:not(.collapsed) button:not(.navgrip):not(.navtoggle),#mainnav.nv-bottom:not(.collapsed) button:not(.navgrip):not(.navtoggle){height:46px;flex-shrink:0;}
+    body[data-nav=bottom] .app{padding-bottom:100px;} body[data-nav=top] .app{padding-top:80px;} body[data-nav=top] header{top:72px;}
+  }
+  @media (min-width:701px) and (max-width:899px){
+    #mainnav.nv-top:not(.collapsed) button svg,#mainnav.nv-bottom:not(.collapsed) button svg{display:none;}
+    #mainnav.nv-top:not(.collapsed) button:not(.navgrip):not(.navtoggle),#mainnav.nv-bottom:not(.collapsed) button:not(.navgrip):not(.navtoggle){padding:0 11px;}
+    #mainnav.nv-top:not(.collapsed) .nvsum small,#mainnav.nv-bottom:not(.collapsed) .nvsum small{display:none;}
   }
   /* ===== Painel em blocos ===== */
   .dgrid{display:grid;grid-template-columns:repeat(48,minmax(0,1fr));grid-auto-flow:row dense;gap:0;align-items:start;margin:0 -7px;}
