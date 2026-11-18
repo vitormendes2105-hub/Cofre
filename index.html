@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261116-3">
+<meta name="cofre-version" content="20261118-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -419,6 +419,18 @@
     #mainnav.nv-top.nv-a-start,#mainnav.nv-bottom.nv-a-start{left:12px;transform:translateX(var(--nvshift,0px));}
     #mainnav.nv-top.nv-a-end,#mainnav.nv-bottom.nv-a-end{left:auto;right:12px;transform:translateX(var(--nvshift,0px));}
   }
+  /* ===== Vidro transparente nas barras (como o Dock do iPad) ===== */
+  #mainnav.nv-left,#mainnav.nv-right,#mainnav.nv-top,#mainnav.nv-bottom{background:rgba(255,255,255,var(--nvA,.16));backdrop-filter:blur(var(--nvBlur,14px)) saturate(1.7);-webkit-backdrop-filter:blur(var(--nvBlur,14px)) saturate(1.7);border:1px solid rgba(255,255,255,.55);box-shadow:0 12px 32px -16px rgba(20,30,40,.3),inset 0 1px 0 rgba(255,255,255,.6),0 0 0 .5px rgba(60,60,67,.16);}
+  #mainnav.nv-left:not(.collapsed),#mainnav.nv-right:not(.collapsed),#mainnav.nv-top:not(.collapsed),#mainnav.nv-bottom:not(.collapsed){background:rgba(255,255,255,var(--nvA,.16));backdrop-filter:blur(var(--nvBlur,14px)) saturate(1.7);-webkit-backdrop-filter:blur(var(--nvBlur,14px)) saturate(1.7);border:1px solid rgba(255,255,255,.55);box-shadow:0 12px 32px -16px rgba(20,30,40,.3),inset 0 1px 0 rgba(255,255,255,.6),0 0 0 .5px rgba(60,60,67,.16);}
+  #mainnav.collapsed .navtoggle{background:transparent;color:var(--brand-deep);}
+  #mainnav.nv-left:not(.collapsed) button.active,#mainnav.nv-right:not(.collapsed) button.active,#mainnav.nv-top button.active,#mainnav.nv-bottom button.active{background:rgba(60,60,67,.06);color:var(--brand-deep);font-weight:700;box-shadow:inset 3px 0 0 var(--nvLine,rgba(11,77,61,.62));}
+  #mainnav.nv-left:not(.collapsed) .nvsum,#mainnav.nv-right:not(.collapsed) .nvsum{background:transparent;color:var(--ink);border-radius:0;border-top:1px solid rgba(60,60,67,.14);}
+  #mainnav.nv-top:not(.collapsed) .nvsum,#mainnav.nv-bottom:not(.collapsed) .nvsum{background:transparent;color:var(--ink);border-radius:0;border-left:1px solid rgba(60,60,67,.14);}
+  #mainnav .nvsum small{color:var(--muted);opacity:1;} #mainnav .nvsum b{color:var(--brand-deep);}
+  .tol-vis{margin-left:auto;display:flex;align-items:center;} .tol-name{flex:0 1 auto;}
+  /* Em pé: a barra abre por cima do conteúdo; o conteúdo usa a tela toda */
+  body.navo .wordmark{display:inline!important;} body.navo .pagetitle{display:none!important;}
+  body.navo #mainnav:not(.collapsed){z-index:60;box-shadow:0 24px 60px -18px rgba(20,30,40,.45),inset 0 1px 0 rgba(255,255,255,.6),0 0 0 .5px rgba(60,60,67,.2);}
   /* ===== Painel em blocos ===== */
   .dgrid{display:grid;grid-template-columns:repeat(48,minmax(0,1fr));grid-auto-flow:row dense;gap:0;align-items:start;margin:0 -7px;}
   .gb{grid-column:span var(--sp,48);min-width:0;position:relative;border-radius:30px;padding:7px;container-type:inline-size;}
@@ -994,7 +1006,7 @@ function render(){
       <div class="brand"><span class="wordmark">cofre</span><span class="pagetitle">${PAGE_TITLES[ui.tab]||''}</span></div>
       <div style="display:flex;align-items:center">${alertBellHtml()}${syChipHtml()}<button class="hdr-cta" onclick="openTxModal()">Novo lançamento</button></div>
     </header>
-    <nav id="mainnav" class="nv-${navPos()} nv-a-${navAlign()}${navCollapsed()?' collapsed':''}" style="--nvshift:${navShift()}px">${navCollapsed()?'':NAVGRIP}
+    <nav id="mainnav" class="nv-${navPos()} nv-a-${navAlign()}${navCollapsed()?' collapsed':''}" style="${navVars()}">${navCollapsed()?'':NAVGRIP}
       <div class="nvbrand">cofre</div>
       ${navTabsHtml()}
       ${navSummary()}
@@ -1009,7 +1021,7 @@ function render(){
   if(ui.modal) renderModal();
   if(ui.confirmBox) renderConfirm();
 }
-function setTab(id){ if(ui.tab!==id){ ui.editLayout=null; ui.editOrient=null; } ui.tab = id; render(); }
+function setTab(id){ ui.navOpen=false; if(ui.tab!==id){ ui.editLayout=null; ui.editOrient=null; } ui.tab = id; render(); }
 function renderContent(){
   const c = document.getElementById('content');
   document.body.classList.toggle('nobg',!!(state.settings&&state.settings.nobg)); navAttrs();
@@ -1223,14 +1235,16 @@ const NAVI={caixinhas:'<path d="M8 3h8M7 6h10"/><path d="M6 9a2 2 0 0 1 2-2h8a2 
 const NAV_TABS=[['dashboard','Painel'],['balanco','Balanço do mês'],['orcamentos','Orçamentos'],['caixinhas','Caixinhas'],['lancamentos','Lançamentos'],['contas','Contas a pagar'],['cartoes','Cartões'],['categorias','Configurações']];
 const NAV_SPLIT=5; // as 5 primeiras ficam em "Menu", as demais em "Geral"
 function tabOrder(){ const def=NAV_TABS.map(x=>x[0]), o=(((state.settings||{}).tabOrder)||[]).filter((k,i,a)=>def.includes(k)&&a.indexOf(k)===i); def.forEach(k=>{ if(!o.includes(k)) o.push(k); }); return o; }
-function navTabsHtml(){ const lab=Object.fromEntries(NAV_TABS);
-  return tabOrder().map((id,i)=>(i===0?'<div class="nvlabel">Menu</div>':i===NAV_SPLIT?'<div class="nvlabel">Geral</div>':'')+tabBtn(id,lab[id])).join(''); }
+function tabHidden(){ const h=((state.settings||{}).tabHidden)||[]; return h.filter(k=>k!=='categorias'&&NAV_TABS.some(x=>x[0]===k)); }
+function tabToggle(id){ if(id==='categorias') return; state.settings=state.settings||{}; const h=tabHidden(), i=h.indexOf(id); if(i>=0) h.splice(i,1); else h.push(id); state.settings.tabHidden=h; saveState(); render(); }
+function navTabsHtml(){ const lab=Object.fromEntries(NAV_TABS), hid=tabHidden();
+  return tabOrder().filter(id=>!hid.includes(id)).map((id,i)=>(i===0?'<div class="nvlabel">Menu</div>':i===NAV_SPLIT?'<div class="nvlabel">Geral</div>':'')+tabBtn(id,lab[id])).join(''); }
 function setTabOrder(o){ state.settings=state.settings||{}; state.settings.tabOrder=o; saveState(); render(); }
 function tabMove(id,dir){ const o=tabOrder(), i=o.indexOf(id), j=i+dir; if(i<0||j<0||j>=o.length) return; o.splice(j,0,o.splice(i,1)[0]); setTabOrder(o); }
 function tabOrderReset(){ setTabOrder(NAV_TABS.map(x=>x[0])); }
-function tabOrderCard(){ const lab=Object.fromEntries(NAV_TABS), o=tabOrder();
-  const rows=o.map((id,i)=>`${i===0?'<div class="tol-sep">Menu</div>':i===NAV_SPLIT?'<div class="tol-sep">Geral</div>':''}<div class="tol-row" data-id="${id}"><span class="tol-grip" onpointerdown="tabDragStart(event,'${id}')" title="Arraste para mudar de lugar">${GBGRIP}</span><span class="tol-name">${lab[id]}</span><span class="tol-btns"><button ${i===0?'disabled':''} onclick="tabMove('${id}',-1)" title="Subir">${icon('arrowUp')}</button><button ${i===o.length-1?'disabled':''} onclick="tabMove('${id}',1)" title="Descer">${icon('arrowDown')}</button></span></div>`).join('');
-  return `<div class="card"><h2>Ordem das abas</h2><p class="gsub" style="margin:6px 0 12px">Arraste pelos pontinhos (ou use as setas) para escolher a ordem da barra de abas. As ${NAV_SPLIT} primeiras ficam em “Menu” e as demais em “Geral”.</p><div class="tol" id="tol">${rows}</div><div class="chips" style="margin:12px 0 0"><button class="chip" onclick="tabOrderReset()">Restaurar ordem original</button></div></div>`; }
+function tabOrderCard(){ const lab=Object.fromEntries(NAV_TABS), o=tabOrder(), hid=tabHidden();
+  const rows=o.map((id,i)=>`${i===0?'<div class="tol-sep">Menu</div>':i===NAV_SPLIT?'<div class="tol-sep">Geral</div>':''}<div class="tol-row" data-id="${id}"><span class="tol-grip" onpointerdown="tabDragStart(event,'${id}')" title="Arraste para mudar de lugar">${GBGRIP}</span><span class="tol-name">${lab[id]}</span>${id==='categorias'?'<span class="tol-vis"><small style="color:var(--muted)">Sempre visível</small></span>':`<span class="tol-vis"><button class="chip ${hid.includes(id)?'':'on'}" onclick="tabToggle('${id}')">${hid.includes(id)?'Oculta':'Na barra'}</button></span>`}<span class="tol-btns"><button ${i===0?'disabled':''} onclick="tabMove('${id}',-1)" title="Subir">${icon('arrowUp')}</button><button ${i===o.length-1?'disabled':''} onclick="tabMove('${id}',1)" title="Descer">${icon('arrowDown')}</button></span></div>`).join('');
+  return `<div class="card"><h2>Abas da barra</h2><p class="gsub" style="margin:6px 0 12px">Escolha quais abas aparecem na barra (botão “Na barra” / “Oculta”) e a ordem delas: arraste pelos pontinhos ou use as setas. Uma aba oculta não é apagada, só sai da barra. As ${NAV_SPLIT} primeiras ficam em “Menu” e as demais em “Geral”.</p><div class="tol" id="tol">${rows}</div><div class="chips" style="margin:12px 0 0"><button class="chip" onclick="tabOrderReset()">Restaurar ordem original</button><button class="chip" onclick="state.settings.tabHidden=[];saveState();render()">Mostrar todas</button></div></div>`; }
 let TD=null;
 function tabDragStart(e,id){ e.preventDefault(); const box=document.getElementById('tol'); if(!box) return; const el=box.querySelector('.tol-row[data-id="'+id+'"]'); if(!el) return; TD={id,el,box,target:null,pos:null}; el.classList.add('dragging'); }
 function tabClear(){ document.querySelectorAll('.tol-row.drop-t,.tol-row.drop-b').forEach(n=>n.classList.remove('drop-t','drop-b')); }
@@ -1669,16 +1683,35 @@ function navShift(){ return navVert()?Math.round(Number((state.settings||{}).nav
 function navSetPos(v){ state.settings=state.settings||{}; state.settings.navPos=v; state.settings.navShift=0; state.settings.navAlign='center'; saveState(); render(); }
 function navSetAlign(a){ state.settings=state.settings||{}; state.settings.navAlign=a; state.settings.navShift=0; saveState(); render(); }
 function navCollapsible(){ return (state.settings||{}).navCollapsible!==false; }
-function navCollapsed(){ return navCollapsible()&&!!(state.settings||{}).navCollapsed; }
-function navAttrs(){ document.body.setAttribute('data-nav',navPos()); document.body.classList.toggle('navc',navCollapsed()); }
-function navToggleBtn(){ if(!navCollapsible()) return ''; const c=navCollapsed(); return `<button class="navtoggle" onclick="navToggleClick()" title="${c?'Abrir abas':'Recolher abas'}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${c?(NAVI[ui.tab]||''):'<path d="M5 12h14"/>'}</svg></button>`; }
-function navToggleClick(){ if(window.__navDragged) return; setSetting('navCollapsed',!navCollapsed()); }
+// Em pé (iPad vertical) a barra lateral abre por cima do conteúdo, sem recuo
+function navOverlay(){ return navVert()&&window.innerWidth>=700&&window.innerWidth<900; }
+function navCollapsed(){ if(navOverlay()) return !ui.navOpen; return navCollapsible()&&!!(state.settings||{}).navCollapsed; }
+// Aparência do vidro (valores guardados só neste aparelho)
+const NAV_LINES={verde:['Verde','rgba(11,77,61,.62)'],cinza:['Cinza','rgba(60,60,67,.5)'],azul:['Azul','rgba(10,100,220,.62)'],laranja:['Laranja','rgba(230,120,20,.68)'],nenhuma:['Sem linha','transparent']};
+function navA(){ const v=Number((state.settings||{}).navAlpha); return (isFinite(v)&&(state.settings||{}).navAlpha!==undefined?Math.max(0,Math.min(90,v)):16)/100; }
+function navBlur(){ const v=Number((state.settings||{}).navBlur); return (isFinite(v)&&(state.settings||{}).navBlur!==undefined?Math.max(0,Math.min(40,v)):14); }
+function navLineKey(){ const k=(state.settings||{}).navLine; return NAV_LINES[k]?k:'verde'; }
+function navVars(){ return `--nvshift:${navShift()}px;--nvA:${navA()};--nvBlur:${navBlur()}px;--nvLine:${NAV_LINES[navLineKey()][1]}`; }
+function navLook(k,v,final){ state.settings=state.settings||{}; state.settings[k]=(k==='navLine')?v:Number(v);
+  const n=document.getElementById('mainnav'); if(n) n.setAttribute('style',navVars());
+  if(final){ saveState(); if(k==='navLine') render(); } }
+function navLookReset(){ state.settings=state.settings||{}; ['navAlpha','navBlur','navLine'].forEach(k=>{ delete state.settings[k]; }); saveState(); render(); }
+function navAttrs(){ document.body.setAttribute('data-nav',navPos()); document.body.classList.toggle('navc',navCollapsed()||navOverlay()); document.body.classList.toggle('navo',navOverlay()); }
+function navToggleBtn(){ if(!navCollapsible()&&!navOverlay()) return ''; const c=navCollapsed(), ov=navOverlay(); return `<button class="navtoggle" onclick="navToggleClick()" title="${c?'Abrir abas':'Fechar abas'}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ov?(c?'<path d="M4 7h16M4 12h16M4 17h16"/>':'<path d="M6 6l12 12M18 6L6 18"/>'):(c?(NAVI[ui.tab]||''):'<path d="M5 12h14"/>')}</svg></button>`; }
+function navToggleClick(){ if(window.__navDragged) return; if(navOverlay()){ ui.navOpen=!ui.navOpen; render(); return; } setSetting('navCollapsed',!navCollapsed()); }
+// toque fora da barra aberta (em pé) fecha a barra
+document.addEventListener('click',e=>{ if(!navOverlay()||!ui.navOpen) return; if(e.target.closest&&e.target.closest('#mainnav')) return; e.stopPropagation(); e.preventDefault(); ui.navOpen=false; render(); },true);
+(function(){ let last=navOverlay(); window.addEventListener('resize',()=>{ clearTimeout(navOverlay._t); navOverlay._t=setTimeout(()=>{ const o=navOverlay(); if(o!==last){ last=o; ui.navOpen=false; const a=document.activeElement; if(!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) render(); } },200); }); })();
 function navRows(){
   const st=state.settings||{};
   const row=(t,d,ctl)=>`<div class="commit-row" style="gap:16px;align-items:center"><span><b>${t}</b><br><small style="color:var(--muted)">${d}</small></span><span>${ctl}</span></div>`;
   const opts=[['left','Esquerda'],['right','Direita'],['top','Em cima'],['bottom','Embaixo']];
   return row('Barra de abas recolhível','Mostra um botão para recolher a barra e abrir de novo, como a paleta de canetas das Notas. Desligue para a barra ficar sempre aberta.',`<button class="chip ${navCollapsible()?'on':''}" onclick="setSetting('navCollapsible',${!navCollapsible()})">${navCollapsible()?'Ligado':'Desligado'}</button>`)
    +(navVert()?row('Alinhamento da barra','Centralizada, no começo ou no fim da borda. Para ajustar um pouquinho, arraste a barra pelos pontinhos e solte.',`<span style="display:flex;gap:6px;flex-wrap:wrap">${[['start','Início'],['center','Centro'],['end','Fim']].map(([v,l])=>`<button class="chip ${navAlign()===v&&!navShift()?'on':''}" onclick="navSetAlign('${v}')">${l}</button>`).join('')}</span>`):'')
+   +row('Transparência do vidro','Mais para a esquerda: vidro puro, sem cor. Mais para a direita: barra mais branca.',`<input type="range" min="0" max="90" step="2" value="${Math.round(navA()*100)}" oninput="navLook('navAlpha',this.value,0)" onchange="navLook('navAlpha',this.value,1)" style="width:150px">`)
+   +row('Desfoque do vidro','Quanto o fundo atrás da barra fica borrado. Zero é totalmente nítido.',`<input type="range" min="0" max="40" step="1" value="${navBlur()}" oninput="navLook('navBlur',this.value,0)" onchange="navLook('navBlur',this.value,1)" style="width:150px">`)
+   +row('Linha da aba ativa','A linha fininha ao lado da aba em que você está.',`<select onchange="navLook('navLine',this.value,1)" style="width:auto">${Object.entries(NAV_LINES).map(([v,x])=>`<option value="${v}" ${v===navLineKey()?'selected':''}>${x[0]}</option>`).join('')}</select>`)
+   +row('Visual da barra','Volta transparência, desfoque e linha para o padrão.',`<button class="chip" onclick="navLookReset()">Restaurar padrão</button>`)
    +row('Posição da barra','Você também pode arrastar a barra pelos pontinhos e soltar perto de uma borda. Em cima e embaixo ela fica na horizontal.',`<select onchange="navSetPos(this.value)" style="width:auto">${opts.map(([v,l])=>`<option value="${v}" ${v===navPos()?'selected':''}>${l}</option>`).join('')}</select>`);
 }
 (function(){
@@ -3459,7 +3492,7 @@ function syMeta(){ try{ return JSON.parse(localStorage.getItem(SY_META_KEY)||'nu
 function syMetaSet(patch){ const m=Object.assign(syMeta(),patch); try{ localStorage.setItem(SY_META_KEY, JSON.stringify(m)); }catch(e){} return m; }
 function syHash(str){ let h1=0xdeadbeef,h2=0x41c6ce57; for(let i=0;i<str.length;i++){ const ch=str.charCodeAt(i); h1=Math.imul(h1^ch,2654435761); h2=Math.imul(h2^ch,1597334677); } h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909); h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909); return (4294967296*(2097151&h2)+(h1>>>0)).toString(36); }
 // preferências da barra de abas (posição/recolhida) são de cada aparelho: não vão para a nuvem
-const SY_LOCAL_SETTINGS=['navPos','navAlign','navShift','navCollapsed','navCollapsible','txSort'];
+const SY_LOCAL_SETTINGS=['navPos','navAlign','navShift','navCollapsed','navCollapsible','navAlpha','navBlur','navLine','txSort'];
 function syState(){ const s=Object.assign({},state); if(s.settings){ s.settings=Object.assign({},s.settings); SY_LOCAL_SETTINGS.forEach(k=>{ delete s.settings[k]; }); } return s; }
 function sySnap(){ return JSON.stringify(syState()); }
 function syStable(o){ if(Array.isArray(o)) return '['+o.map(syStable).join(',')+']'; if(o&&typeof o==='object') return '{'+Object.keys(o).filter(k=>o[k]!==undefined).sort().map(k=>JSON.stringify(k)+':'+syStable(o[k])).join(',')+'}'; return JSON.stringify(o); }
