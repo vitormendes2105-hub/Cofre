@@ -143,7 +143,8 @@
   .al-eye{position:relative;background:#fff;border:1px solid var(--border);color:var(--ink);border-radius:999px;width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin-right:8px;padding:0;}
   .al-eye.on{background:var(--brand-deep);color:#fff;border-color:var(--brand-deep);}
   /* olhinho: números em fosco leve, sem filtro de desfoque (o filtro deixava tudo apagado e deixava uma faixa rosa no cartão de saldos). Só vale para os números (span), não para as linhas da tabela. */
-  body.priv span.mv{color:transparent;-webkit-text-fill-color:transparent;text-shadow:0 0 .16em var(--mvc,rgba(32,52,46,.78));user-select:none;-webkit-user-select:none;}
+  body.priv span.mv{color:transparent;-webkit-text-fill-color:transparent;text-shadow:0 0 var(--mvB,.5em) var(--mvc,rgba(32,52,46,.9));user-select:none;-webkit-user-select:none;}
+  .mv-sample{font-family:var(--serif);font-size:20px;color:transparent;-webkit-text-fill-color:transparent;text-shadow:0 0 var(--mvB,.5em) var(--brand-deep);user-select:none;-webkit-user-select:none;}
   .al-band{border-color:var(--gold);padding-top:14px;padding-bottom:14px;}
   .al-bh{display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:14px;}
   .al-list{margin-top:10px;}
@@ -1403,7 +1404,7 @@ function tetoLinha(b){
 function linkedToBudget(id,cat){ const bl=state.bills.find(x=>x.id===id); return !!bl&&billLink(bl)===cat; }
 
 // ===== Formulários no app (sem prompt/confirm nativos) e Configurações =====
-function fmt(v){ return (state&&state.settings&&state.settings.hide)?'R$ ••••':fmtRaw(v); }
+function fmt(v){ return fmtRaw(v); }
 function openForm(title,fields,onOk,okLabel,note){ ui.modal={type:'form',title,fields,onOk,okLabel:okLabel||'Salvar',note:note||'',error:''}; render(); }
 function submitForm(){
   const m=ui.modal, vals={};
@@ -1440,7 +1441,7 @@ function settingsView(){
     ${row('Dia em que você recebe',w?`Hoje: ${w.from!==w.to?'dias '+w.from+' a '+w.to:'dia '+w.to} (${w.manual?'definido por você':'detectado'}). Usado na sugestão por dia e por semana.`:'Sem entradas para detectar.',`<button class="chip" onclick="setPayday()">Ajustar dias</button>`)}
     ${row('Avisar a partir de','Quando um orçamento chega a esta porcentagem do limite, aparece o alerta.',sel('alertPct',[60,70,80,90],st.alertPct||80,'%'))}
     ${row('Meses usados nas médias','Quantos meses anteriores entram na projeção, no gasto variável e na detecção do dia de recebimento.',sel('months',[1,2,3,4,5,6],st.months||3,''))}
-    ${row('Ocultar valores','Esconde os valores em dinheiro na tela, útil em público.',`<button class="chip ${st.hide?'on':''}" onclick="setSetting('hide',${!st.hide})">${st.hide?'Ligado':'Desligado'}</button>`)}
+    ${row('Nível do fosco (olhinho)','Quanto os números ficam embaçados quando o olhinho está ligado. Mais para a direita, mais difícil de ler. Vale só neste aparelho.',`<span style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><input type="range" min="0" max="100" step="5" value="${privLevel()}" oninput="privLook(this.value,0)" onchange="privLook(this.value,1)" style="width:150px"><span class="mv-sample">R$ 1.234,56</span></span>`)}
     ${navRows()}
     ${row('Gravura ao fundo','Mostra ou esconde o desenho do casarão atrás das telas.',`<button class="chip ${st.nobg?'':'on'}" onclick="setSetting('nobg',${!st.nobg})">${st.nobg?'Desligada':'Ligada'}</button>`)}
   </div>`+tabOrderCard()+categoriesView();
@@ -2464,8 +2465,12 @@ function alertasAgrupados(a){ return ['Orçamentos','Caixinhas','Outros'].map(g=
 function privOn(){ try{ return localStorage.getItem('cofreHideValues')==='1'; }catch(_){ return false; } }
 function eyeBtnHtml(){ const on=privOn(), ic='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'+(on?'<path d="M3 3l18 18"/>':'')+'</svg>';
   return `<button class="al-eye${on?' on':''}" onclick="privToggle()" title="${on?'Mostrar valores':'Esconder valores'}" aria-label="${on?'Mostrar valores':'Esconder valores'}" aria-pressed="${on}">${ic}</button>`; }
+function privLevel(){ const v=Number((state.settings||{}).privLevel); return ((state.settings||{}).privLevel!==undefined&&isFinite(v))?Math.max(0,Math.min(100,v)):50; }
+function privEm(){ return (0.16+privLevel()/100*0.84).toFixed(2)+'em'; }
+function privLook(v,final){ state.settings=state.settings||{}; state.settings.privLevel=Number(v); document.documentElement.style.setProperty('--mvB',privEm()); if(final) saveState(); }
 function privWrap(){
-  const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode(n){ const p=n.parentNode; if(!p||p.nodeType!==1||n.nodeValue.indexOf('R$')<0) return NodeFilter.FILTER_REJECT; if(/^(SCRIPT|STYLE|TEXTAREA|INPUT|OPTION|SELECT|NOSCRIPT)$/.test(p.tagName)||(p.closest&&p.closest('.mv'))) return NodeFilter.FILTER_REJECT; return NodeFilter.FILTER_ACCEPT; }});
+  document.documentElement.style.setProperty('--mvB',privEm());
+  const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode(n){ const p=n.parentNode; if(!p||p.nodeType!==1||n.nodeValue.indexOf('R$')<0) return NodeFilter.FILTER_REJECT; if(/^(SCRIPT|STYLE|TEXTAREA|INPUT|OPTION|SELECT|NOSCRIPT)$/.test(p.tagName)||(p.closest&&p.closest('span.mv, .mv-sample'))) return NodeFilter.FILTER_REJECT; return NodeFilter.FILTER_ACCEPT; }});
   const list=[]; let n; while((n=w.nextNode())) list.push(n);
   list.forEach(n=>{ const t=n.nodeValue, fr=document.createDocumentFragment(); let last=0;
     t.replace(/(?:[-−+]\s?)?R\$\s?[-−]?\d[\d.]*(?:,\d+)?/g,(m,off)=>{ if(off>last) fr.appendChild(document.createTextNode(t.slice(last,off))); const sp=document.createElement('span'); sp.className='mv'; try{ const cc=getComputedStyle(p).color; if(cc&&!/transparent|, 0\)$/.test(cc)) sp.style.setProperty('--mvc',cc); }catch(_){} sp.textContent=m; fr.appendChild(sp); last=off+m.length; return m; });
@@ -3526,7 +3531,7 @@ function syMeta(){ try{ return JSON.parse(localStorage.getItem(SY_META_KEY)||'nu
 function syMetaSet(patch){ const m=Object.assign(syMeta(),patch); try{ localStorage.setItem(SY_META_KEY, JSON.stringify(m)); }catch(e){} return m; }
 function syHash(str){ let h1=0xdeadbeef,h2=0x41c6ce57; for(let i=0;i<str.length;i++){ const ch=str.charCodeAt(i); h1=Math.imul(h1^ch,2654435761); h2=Math.imul(h2^ch,1597334677); } h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909); h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909); return (4294967296*(2097151&h2)+(h1>>>0)).toString(36); }
 // preferências da barra de abas (posição/recolhida) são de cada aparelho: não vão para a nuvem
-const SY_LOCAL_SETTINGS=['navPos','navAlign','navShift','navCollapsed','navCollapsible','navAlpha','navBlur','navLine','txSort'];
+const SY_LOCAL_SETTINGS=['navPos','navAlign','navShift','navCollapsed','navCollapsible','navAlpha','navBlur','navLine','txSort','privLevel'];
 function syState(){ const s=Object.assign({},state); if(s.settings){ s.settings=Object.assign({},s.settings); SY_LOCAL_SETTINGS.forEach(k=>{ delete s.settings[k]; }); } return s; }
 function sySnap(){ return JSON.stringify(syState()); }
 function syStable(o){ if(Array.isArray(o)) return '['+o.map(syStable).join(',')+']'; if(o&&typeof o==='object') return '{'+Object.keys(o).filter(k=>o[k]!==undefined).sort().map(k=>JSON.stringify(k)+':'+syStable(o[k])).join(',')+'}'; return JSON.stringify(o); }
