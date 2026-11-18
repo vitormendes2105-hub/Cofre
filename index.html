@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261118-1">
+<meta name="cofre-version" content="20261118-2">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -1684,7 +1684,7 @@ function navSetPos(v){ state.settings=state.settings||{}; state.settings.navPos=
 function navSetAlign(a){ state.settings=state.settings||{}; state.settings.navAlign=a; state.settings.navShift=0; saveState(); render(); }
 function navCollapsible(){ return (state.settings||{}).navCollapsible!==false; }
 // Em pé (iPad vertical) a barra lateral abre por cima do conteúdo, sem recuo
-function navOverlay(){ return navVert()&&window.innerWidth>=700&&window.innerWidth<900; }
+function navOverlay(){ return navVert()&&window.innerWidth>=700; }
 function navCollapsed(){ if(navOverlay()) return !ui.navOpen; return navCollapsible()&&!!(state.settings||{}).navCollapsed; }
 // Aparência do vidro (valores guardados só neste aparelho)
 const NAV_LINES={verde:['Verde','rgba(11,77,61,.62)'],cinza:['Cinza','rgba(60,60,67,.5)'],azul:['Azul','rgba(10,100,220,.62)'],laranja:['Laranja','rgba(230,120,20,.68)'],nenhuma:['Sem linha','transparent']};
@@ -1696,7 +1696,17 @@ function navLook(k,v,final){ state.settings=state.settings||{}; state.settings[k
   const n=document.getElementById('mainnav'); if(n) n.setAttribute('style',navVars());
   if(final){ saveState(); if(k==='navLine') render(); } }
 function navLookReset(){ state.settings=state.settings||{}; ['navAlpha','navBlur','navLine'].forEach(k=>{ delete state.settings[k]; }); saveState(); render(); }
-function navAttrs(){ document.body.setAttribute('data-nav',navPos()); document.body.classList.toggle('navc',navCollapsed()||navOverlay()); document.body.classList.toggle('navo',navOverlay()); }
+function navFit(){
+  const n=document.getElementById('mainnav'); if(!n||!navVert()) return;
+  const r=n.getBoundingClientRect(), top=8, bot=innerHeight-8; let dy=0;
+  if(r.top<top) dy=top-r.top; else if(r.bottom>bot) dy=bot-r.bottom;
+  if(r.height>bot-top) dy=top-r.top;
+  if(Math.abs(dy)<1) return;
+  n.style.setProperty('--nvshift',((parseFloat(n.style.getPropertyValue('--nvshift'))||0)+dy)+'px');
+}
+window.addEventListener('resize',()=>{ clearTimeout(navFit._t); navFit._t=setTimeout(navFit,150); });
+window.addEventListener('orientationchange',()=>{ clearTimeout(navFit._t); navFit._t=setTimeout(navFit,400); });
+function navAttrs(){ document.body.setAttribute('data-nav',navPos()); document.body.classList.toggle('navc',navCollapsed()||navOverlay()); document.body.classList.toggle('navo',navOverlay()); try{ requestAnimationFrame(navFit); }catch(_){} }
 function navToggleBtn(){ if(!navCollapsible()&&!navOverlay()) return ''; const c=navCollapsed(), ov=navOverlay(); return `<button class="navtoggle" onclick="navToggleClick()" title="${c?'Abrir abas':'Fechar abas'}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ov?(c?'<path d="M4 7h16M4 12h16M4 17h16"/>':'<path d="M6 6l12 12M18 6L6 18"/>'):(c?(NAVI[ui.tab]||''):'<path d="M5 12h14"/>')}</svg></button>`; }
 function navToggleClick(){ if(window.__navDragged) return; if(navOverlay()){ ui.navOpen=!ui.navOpen; render(); return; } setSetting('navCollapsed',!navCollapsed()); }
 // toque fora da barra aberta (em pé) fecha a barra
