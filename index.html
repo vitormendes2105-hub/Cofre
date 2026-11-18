@@ -142,7 +142,8 @@
   .al-bell:focus-visible,.al-bh:focus-visible{outline:2px solid var(--brand);outline-offset:2px;}
   .al-eye{position:relative;background:#fff;border:1px solid var(--border);color:var(--ink);border-radius:999px;width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin-right:8px;padding:0;}
   .al-eye.on{background:var(--brand-deep);color:#fff;border-color:var(--brand-deep);}
-  body.priv .mv{display:inline-block;filter:blur(.35em);-webkit-filter:blur(.35em);user-select:none;-webkit-user-select:none;}
+  /* olhinho: números em fosco leve, sem filtro de desfoque (o filtro deixava tudo apagado e deixava uma faixa rosa no cartão de saldos). Só vale para os números (span), não para as linhas da tabela. */
+  body.priv span.mv{color:transparent;-webkit-text-fill-color:transparent;text-shadow:0 0 .16em var(--mvc,rgba(32,52,46,.78));user-select:none;-webkit-user-select:none;}
   .al-band{border-color:var(--gold);padding-top:14px;padding-bottom:14px;}
   .al-bh{display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:14px;}
   .al-list{margin-top:10px;}
@@ -2467,7 +2468,7 @@ function privWrap(){
   const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode(n){ const p=n.parentNode; if(!p||p.nodeType!==1||n.nodeValue.indexOf('R$')<0) return NodeFilter.FILTER_REJECT; if(/^(SCRIPT|STYLE|TEXTAREA|INPUT|OPTION|SELECT|NOSCRIPT)$/.test(p.tagName)||(p.closest&&p.closest('.mv'))) return NodeFilter.FILTER_REJECT; return NodeFilter.FILTER_ACCEPT; }});
   const list=[]; let n; while((n=w.nextNode())) list.push(n);
   list.forEach(n=>{ const t=n.nodeValue, fr=document.createDocumentFragment(); let last=0;
-    t.replace(/(?:[-−+]\s?)?R\$\s?[-−]?\d[\d.]*(?:,\d+)?/g,(m,off)=>{ if(off>last) fr.appendChild(document.createTextNode(t.slice(last,off))); const sp=document.createElement('span'); sp.className='mv'; sp.textContent=m; fr.appendChild(sp); last=off+m.length; return m; });
+    t.replace(/(?:[-−+]\s?)?R\$\s?[-−]?\d[\d.]*(?:,\d+)?/g,(m,off)=>{ if(off>last) fr.appendChild(document.createTextNode(t.slice(last,off))); const sp=document.createElement('span'); sp.className='mv'; try{ const cc=getComputedStyle(p).color; if(cc&&!/transparent|, 0\)$/.test(cc)) sp.style.setProperty('--mvc',cc); }catch(_){} sp.textContent=m; fr.appendChild(sp); last=off+m.length; return m; });
     if(last<t.length) fr.appendChild(document.createTextNode(t.slice(last))); n.parentNode.replaceChild(fr,n); });
 }
 function privApply(){
