@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261118-2">
+<meta name="cofre-version" content="20261118-3">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -140,6 +140,9 @@
   .al-bell{position:relative;background:#fff;border:1px solid var(--border);color:var(--ink);border-radius:999px;width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin-right:8px;padding:0;}
   .al-bell .al-n{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--red);color:#fff;font:700 11px/18px 'Inter',sans-serif;text-align:center;}
   .al-bell:focus-visible,.al-bh:focus-visible{outline:2px solid var(--brand);outline-offset:2px;}
+  .al-eye{position:relative;background:#fff;border:1px solid var(--border);color:var(--ink);border-radius:999px;width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin-right:8px;padding:0;}
+  .al-eye.on{background:var(--brand-deep);color:#fff;border-color:var(--brand-deep);}
+  body.priv .mv{display:inline-block;filter:blur(.35em);-webkit-filter:blur(.35em);user-select:none;-webkit-user-select:none;}
   .al-band{border-color:var(--gold);padding-top:14px;padding-bottom:14px;}
   .al-bh{display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:14px;}
   .al-list{margin-top:10px;}
@@ -1004,7 +1007,7 @@ function render(){
   app.innerHTML = `
     <header>
       <div class="brand"><span class="wordmark">cofre</span><span class="pagetitle">${PAGE_TITLES[ui.tab]||''}</span></div>
-      <div style="display:flex;align-items:center">${alertBellHtml()}${syChipHtml()}<button class="hdr-cta" onclick="openTxModal()">Novo lançamento</button></div>
+      <div style="display:flex;align-items:center">${alertBellHtml()}${eyeBtnHtml()}${syChipHtml()}<button class="hdr-cta" onclick="openTxModal()">Novo lançamento</button></div>
     </header>
     <nav id="mainnav" class="nv-${navPos()} nv-a-${navAlign()}${navCollapsed()?' collapsed':''}" style="${navVars()}">${navCollapsed()?'':NAVGRIP}
       <div class="nvbrand">cofre</div>
@@ -2456,6 +2459,26 @@ function alertaEntendi(k){ ui.alertDismissed[k]=true; render(); }
 function alertAttr(t){ return esc(t).replace(/"/g,'&quot;'); }
 function alertaItemHtml(x){ return `<div class="al-item${x.st==='exc'?' exc':''}"><div>${x.t}</div><button class="chip x" data-k="${alertAttr(x.k)}" onclick="alertaEntendi(this.dataset.k)">Entendi</button></div>`; }
 function alertasAgrupados(a){ return ['Orçamentos','Caixinhas','Outros'].map(g=>{ const l=a.filter(x=>(x.g||'Outros')===g); return l.length?`<div class="al-g">${g} (${l.length})</div>`+l.map(alertaItemHtml).join(''):''; }).join(''); }
+// ===== Olhinho: deixa os valores em dinheiro foscos (dá para ver a cor, não o número). Vale só neste aparelho. =====
+function privOn(){ try{ return localStorage.getItem('cofreHideValues')==='1'; }catch(_){ return false; } }
+function eyeBtnHtml(){ const on=privOn(), ic='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'+(on?'<path d="M3 3l18 18"/>':'')+'</svg>';
+  return `<button class="al-eye${on?' on':''}" onclick="privToggle()" title="${on?'Mostrar valores':'Esconder valores'}" aria-label="${on?'Mostrar valores':'Esconder valores'}" aria-pressed="${on}">${ic}</button>`; }
+function privWrap(){
+  const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode(n){ const p=n.parentNode; if(!p||p.nodeType!==1||n.nodeValue.indexOf('R$')<0) return NodeFilter.FILTER_REJECT; if(/^(SCRIPT|STYLE|TEXTAREA|INPUT|OPTION|SELECT|NOSCRIPT)$/.test(p.tagName)||(p.closest&&p.closest('.mv'))) return NodeFilter.FILTER_REJECT; return NodeFilter.FILTER_ACCEPT; }});
+  const list=[]; let n; while((n=w.nextNode())) list.push(n);
+  list.forEach(n=>{ const t=n.nodeValue, fr=document.createDocumentFragment(); let last=0;
+    t.replace(/(?:[-−+]\s?)?R\$\s?[-−]?\d[\d.]*(?:,\d+)?/g,(m,off)=>{ if(off>last) fr.appendChild(document.createTextNode(t.slice(last,off))); const sp=document.createElement('span'); sp.className='mv'; sp.textContent=m; fr.appendChild(sp); last=off+m.length; return m; });
+    if(last<t.length) fr.appendChild(document.createTextNode(t.slice(last))); n.parentNode.replaceChild(fr,n); });
+}
+function privApply(){
+  document.body.classList.toggle('priv',privOn());
+  if(privOn()) privWrap();
+  else document.querySelectorAll('.mv').forEach(sp=>sp.replaceWith(document.createTextNode(sp.textContent)));
+}
+function privToggle(){ try{ localStorage.setItem('cofreHideValues',privOn()?'0':'1'); }catch(_){} privApply(); render(); }
+(function(){ let t=0; const go=()=>{ if(t) return; t=requestAnimationFrame(()=>{ t=0; if(privOn()) privWrap(); }); };
+  try{ new MutationObserver(go).observe(document.body,{childList:true,subtree:true,characterData:true}); }catch(_){}
+  document.body.classList.toggle('priv',privOn()); go(); })();
 function alertBellHtml(){ const n=alertasVisiveis().length; return `<button class="al-bell" onclick="alertPanelToggle(true)" title="Alertas" aria-label="Alertas${n?': '+n:''}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>${n?`<span class="al-n">${n}</span>`:''}</button>`; }
 function alertPanelToggle(v){ ui.alertPanel=!!v; render(); }
 function alertPanelHtml(){ if(!ui.alertPanel) return ''; const a=alertasVisiveis();
