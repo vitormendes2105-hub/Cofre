@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261119-2">
+<meta name="cofre-version" content="20261120-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -320,6 +320,7 @@
   .sy-links{font-size:12.5px;margin-top:12px;color:var(--muted);} .sy-links a{color:var(--brand);font-weight:600;}
   .sy-small{font-size:12px;color:var(--muted);}
   .sync-toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;z-index:300;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center;}
+  .sync-toast.act{pointer-events:auto;cursor:pointer;box-shadow:0 10px 26px -10px rgba(4,42,29,.5);}
   @media(max-width:420px){ .sync-chip{padding:7px 10px;margin-right:6px;} .sync-chip.ok .slabel{display:none;} .sy-cmp{grid-template-columns:1fr;} }
   /* ===== Telas bem estreitas (iPhone pequeno, zoom): cabeçalho e barra de abas não estouram ===== */
   @media(max-width:360px){
@@ -2395,7 +2396,7 @@ async function inboxFetchNow(){
     const j=await r.json().catch(()=>({}));
     if(!r.ok) throw new Error(j.erro||('erro '+r.status));
     await inboxLoad(true);
-    syToast(j.gravados>0 ? j.gravados+' novo(s) do banco para revisar.' : 'Nada novo no banco agora.');
+    syToast(j.gravados>0 ? j.gravados+' novo(s) do banco para revisar. Toque para ver.' : 'Nada novo no banco agora.', j.gravados>0 ? ()=>setTab('lancamentos') : null);
   }catch(e){ syToast('Não consegui buscar: '+((e&&e.message)||e)); }
   finally{ I.fetching=false; if(!ui.modal&&!ui.confirmBox) render(); }
 }
@@ -3608,7 +3609,7 @@ function syUpdateChip(){
   else if(syConfigured() && !ui.modal && !ui.confirmBox){ render(); }
 }
 function syStatus(s){ sy.status=s; syUpdateChip(); if(sy.panel==='account') syRenderPanel(); }
-function syToast(msg){ let t=document.getElementById('syToast'); if(!t){ t=document.createElement('div'); t.id='syToast'; t.className='sync-toast'; document.body.appendChild(t); } t.textContent=msg; t.style.opacity='1'; clearTimeout(sy.toastT); sy.toastT=setTimeout(()=>{ t.style.opacity='0'; },4200); }
+function syToast(msg,act){ let t=document.getElementById('syToast'); if(!t){ t=document.createElement('div'); t.id='syToast'; t.className='sync-toast'; document.body.appendChild(t); } t.textContent=msg; t.style.opacity='1'; t.classList.toggle('act',!!act); t.onclick=act?()=>{ clearTimeout(sy.toastT); t.style.opacity='0'; t.classList.remove('act'); t.onclick=null; act(); }:null; clearTimeout(sy.toastT); sy.toastT=setTimeout(()=>{ t.style.opacity='0'; t.classList.remove('act'); t.onclick=null; },act?9000:4200); }
 
 // ---- tratamento de erros ----
 function syErrKind(e){
