@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261119-1">
+<meta name="cofre-version" content="20261119-2">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -446,6 +446,21 @@
     #mainnav.nv-left:not(.collapsed) .nvsum,#mainnav.nv-right:not(.collapsed) .nvsum{padding-bottom:8px;}
     #mainnav.nv-left:not(.collapsed) .fl,#mainnav.nv-right:not(.collapsed) .fl{white-space:nowrap;}
     #mainnav.nv-left:not(.collapsed) .navtoggle,#mainnav.nv-right:not(.collapsed) .navtoggle{margin-top:0;}
+  }
+  /* Nomes das abas editáveis: a barra lateral acompanha o maior nome (uma linha só); atalhos viram ícones achatados */
+  .tol-in{width:100%;min-width:0;font:600 14px 'Inter',sans-serif;border:1px solid transparent;background:transparent;border-radius:10px;padding:6px 8px;color:var(--ink);}
+  .tol-in:focus{border-color:var(--border);background:#fff;outline:none;}
+  @media (min-width:700px){
+    #mainnav.nv-left:not(.collapsed),#mainnav.nv-right:not(.collapsed){width:max-content;min-width:104px;max-width:min(400px,calc(100vw - 24px));}
+    #mainnav.nv-left:not(.collapsed) .nvbrand,#mainnav.nv-right:not(.collapsed) .nvbrand,#mainnav.nv-left:not(.collapsed) .nvlabel,#mainnav.nv-right:not(.collapsed) .nvlabel,#mainnav.nv-left:not(.collapsed) .nvsum,#mainnav.nv-right:not(.collapsed) .nvsum,#mainnav.nv-left:not(.collapsed) .nvquick,#mainnav.nv-right:not(.collapsed) .nvquick{width:0;min-width:100%;box-sizing:border-box;}
+    #mainnav.nv-left:not(.collapsed) .nvbrand,#mainnav.nv-right:not(.collapsed) .nvbrand{font-size:var(--nvbf,36px);white-space:nowrap;overflow:hidden;padding-left:12px;padding-right:0;}
+    #mainnav.nv-left:not(.collapsed) .nvsum,#mainnav.nv-right:not(.collapsed) .nvsum{overflow:hidden;}
+    #mainnav.nv-left:not(.collapsed) .nvsum b,#mainnav.nv-right:not(.collapsed) .nvsum b{font-size:var(--nvsf,28px);white-space:nowrap;}
+    #mainnav.nv-left:not(.collapsed) button:not(.navgrip):not(.navtoggle),#mainnav.nv-right:not(.collapsed) button:not(.navgrip):not(.navtoggle){min-width:0;}
+    #mainnav.nv-left:not(.collapsed) .fl,#mainnav.nv-right:not(.collapsed) .fl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+    #mainnav.nv-left:not(.collapsed) .nvquick,#mainnav.nv-right:not(.collapsed) .nvquick{gap:8px;padding:0;}
+    #mainnav .nvquick button:not(.navgrip):not(.navtoggle){flex:1 1 0!important;width:auto!important;min-width:34px!important;max-width:76px!important;height:38px!important;border-radius:13px!important;}
+    #mainnav .nvquick .nq{display:none!important;}
   }
   /* ===== Painel em blocos ===== */
   .dgrid{display:grid;grid-template-columns:repeat(48,minmax(0,1fr));grid-auto-flow:row dense;gap:0;align-items:start;margin:0 -7px;}
@@ -1028,7 +1043,7 @@ function render(){
     </header>
     <nav id="mainnav" class="nv-${navPos()} nv-a-${navAlign()}${navCollapsed()?' collapsed':''}" style="${navVars()}">${navCollapsed()?'':NAVGRIP}
       <div class="nvbrand">cofre</div>
-      <div class="nvquick"><button onclick="inboxFetchNow()" title="Buscar no banco" ${ui.inbox&&ui.inbox.fetching?'disabled':''}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg><span class="nq">${ui.inbox&&ui.inbox.fetching?'Buscando':'Buscar'}</span></button><button onclick="meuPluggyAbrir()" title="Atualizar no Meu Pluggy"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg><span class="nq">Pluggy</span></button></div>
+      <div class="nvquick"><button onclick="inboxFetchNow()" title="Buscar no banco" aria-label="Buscar no banco" ${ui.inbox&&ui.inbox.fetching?'disabled':''}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg></button><button onclick="meuPluggyAbrir()" title="Atualizar no Meu Pluggy" aria-label="Atualizar no Meu Pluggy"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h18M6 18v-7M10 18v-7M14 18v-7M18 18v-7M12 2l8 5H4z"/></svg></button></div>
       ${navTabsHtml()}
       ${navSummary()}
       ${navToggleBtn()}
@@ -1264,8 +1279,8 @@ function setTabOrder(o){ state.settings=state.settings||{}; state.settings.tabOr
 function tabMove(id,dir){ const o=tabOrder(), i=o.indexOf(id), j=i+dir; if(i<0||j<0||j>=o.length) return; o.splice(j,0,o.splice(i,1)[0]); setTabOrder(o); }
 function tabOrderReset(){ setTabOrder(NAV_TABS.map(x=>x[0])); }
 function tabOrderCard(){ const lab=Object.fromEntries(NAV_TABS), o=tabOrder(), hid=tabHidden();
-  const rows=o.map((id,i)=>`${i===0?'<div class="tol-sep">Menu</div>':i===NAV_SPLIT?'<div class="tol-sep">Geral</div>':''}<div class="tol-row" data-id="${id}"><span class="tol-grip" onpointerdown="tabDragStart(event,'${id}')" title="Arraste para mudar de lugar">${GBGRIP}</span><span class="tol-name">${lab[id]}</span>${id==='categorias'?'<span class="tol-vis"><small style="color:var(--muted)">Sempre visível</small></span>':`<span class="tol-vis"><button class="chip ${hid.includes(id)?'':'on'}" onclick="tabToggle('${id}')">${hid.includes(id)?'Oculta':'Na barra'}</button></span>`}<span class="tol-btns"><button ${i===0?'disabled':''} onclick="tabMove('${id}',-1)" title="Subir">${icon('arrowUp')}</button><button ${i===o.length-1?'disabled':''} onclick="tabMove('${id}',1)" title="Descer">${icon('arrowDown')}</button></span></div>`).join('');
-  return `<div class="card"><h2>Abas da barra</h2><p class="gsub" style="margin:6px 0 12px">Escolha quais abas aparecem na barra (botão “Na barra” / “Oculta”) e a ordem delas: arraste pelos pontinhos ou use as setas. Uma aba oculta não é apagada, só sai da barra. As ${NAV_SPLIT} primeiras ficam em “Menu” e as demais em “Geral”.</p><div class="tol" id="tol">${rows}</div><div class="chips" style="margin:12px 0 0"><button class="chip" onclick="tabOrderReset()">Restaurar ordem original</button><button class="chip" onclick="state.settings.tabHidden=[];saveState();render()">Mostrar todas</button></div></div>`; }
+  const rows=o.map((id,i)=>`${i===0?'<div class="tol-sep">Menu</div>':i===NAV_SPLIT?'<div class="tol-sep">Geral</div>':''}<div class="tol-row" data-id="${id}"><span class="tol-grip" onpointerdown="tabDragStart(event,'${id}')" title="Arraste para mudar de lugar">${GBGRIP}</span><span class="tol-name"><input class="tol-in" type="text" maxlength="40" value="${esc(tabName(id))}" placeholder="${esc(lab[id])}" onchange="tabRename('${id}',this.value)" aria-label="Nome da aba ${esc(lab[id])}"></span>${id==='categorias'?'<span class="tol-vis"><small style="color:var(--muted)">Sempre visível</small></span>':`<span class="tol-vis"><button class="chip ${hid.includes(id)?'':'on'}" onclick="tabToggle('${id}')">${hid.includes(id)?'Oculta':'Na barra'}</button></span>`}<span class="tol-btns"><button ${i===0?'disabled':''} onclick="tabMove('${id}',-1)" title="Subir">${icon('arrowUp')}</button><button ${i===o.length-1?'disabled':''} onclick="tabMove('${id}',1)" title="Descer">${icon('arrowDown')}</button></span></div>`).join('');
+  return `<div class="card"><h2>Abas da barra</h2><p class="gsub" style="margin:6px 0 12px">Escolha quais abas aparecem na barra (botão “Na barra” / “Oculta”) e a ordem delas: arraste pelos pontinhos ou use as setas. Uma aba oculta não é apagada, só sai da barra. As ${NAV_SPLIT} primeiras ficam em “Menu” e as demais em “Geral”. Para dar outro nome a uma aba, escreva no campo dela (vazio volta ao nome original): a barra lateral se ajusta ao maior nome, sempre em uma linha só.</p><div class="tol" id="tol">${rows}</div><div class="chips" style="margin:12px 0 0"><button class="chip" onclick="tabOrderReset()">Restaurar ordem original</button><button class="chip" onclick="state.settings.tabNames={};saveState();render()">Restaurar nomes</button><button class="chip" onclick="state.settings.tabHidden=[];saveState();render()">Mostrar todas</button></div></div>`; }
 let TD=null;
 function tabDragStart(e,id){ e.preventDefault(); const box=document.getElementById('tol'); if(!box) return; const el=box.querySelector('.tol-row[data-id="'+id+'"]'); if(!el) return; TD={id,el,box,target:null,pos:null}; el.classList.add('dragging'); }
 function tabClear(){ document.querySelectorAll('.tol-row.drop-t,.tol-row.drop-b').forEach(n=>n.classList.remove('drop-t','drop-b')); }
@@ -1277,8 +1292,10 @@ document.addEventListener('pointermove',e=>{ if(!TD) return;
 function tabDragEnd(){ if(!TD) return; const g=TD; TD=null; tabClear(); g.el.classList.remove('dragging'); if(!g.target) return;
   const o=tabOrder().filter(k=>k!==g.id); let i=o.indexOf(g.target); if(g.pos==='after') i++; o.splice(i,0,g.id); setTabOrder(o); }
 document.addEventListener('pointerup',tabDragEnd); document.addEventListener('pointercancel',tabDragEnd);
-function tabBtn(id,label){ const short={contas:'Contas',importar:'Importar',cartoes:'Cartões',lancamentos:'Lançar',dashboard:'Início',categorias:'Config.',balanco:'Balanço',orcamentos:'Orçam.',caixinhas:'Caixas'}[id]||label;
-  return `<button class="${ui.tab===id?'active':''}" onclick="setTab('${id}')" title="${label}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${NAVI[id]||''}</svg><span class="sh">${short}</span><span class="fl">${label}</span></button>`; }
+function tabName(id){ return String((((state.settings||{}).tabNames)||{})[id]||'').trim(); }
+function tabRename(id,v){ state.settings=state.settings||{}; const m=Object.assign({},state.settings.tabNames||{}); v=String(v||'').trim().slice(0,40); if(v) m[id]=v; else delete m[id]; state.settings.tabNames=m; saveState(); render(); }
+function tabBtn(id,label){ const cn=tabName(id); const short={contas:'Contas',importar:'Importar',cartoes:'Cartões',lancamentos:'Lançar',dashboard:'Início',categorias:'Config.',balanco:'Balanço',orcamentos:'Orçam.',caixinhas:'Caixas'}[id]||label; const sh=cn||short, fl=cn||label;
+  return `<button class="${ui.tab===id?'active':''}" onclick="setTab('${id}')" title="${esc(fl)}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${NAVI[id]||''}</svg><span class="sh">${esc(sh)}</span><span class="fl">${esc(fl)}</span></button>`; }
 function colHead(wid,title,extra){ const c=!!state.dashboardPrefs.collapsed[wid];
   return `<div class="card-head" onclick="toggleWidgetCollapse('${wid}')"><div class="card-head-left"><span style="color:var(--muted)">${c?icon('chevronDown'):icon('chevronUp')}</span><h2>${title}</h2></div><div onclick="event.stopPropagation()">${extra||''}</div></div>`; }
 function daysIn(m){ const [y,mo]=m.split('-').map(Number); return new Date(y,mo,0).getDate(); }
@@ -1720,6 +1737,7 @@ function navLookReset(){ state.settings=state.settings||{}; ['navAlpha','navBlur
 function navFit(){
   const n=document.getElementById('mainnav'); if(!n||!navVert()) return;
   const r=n.getBoundingClientRect(), top=8, bot=innerHeight-8; let dy=0;
+  if(r.width>0){ n.style.setProperty('--nvbf',Math.max(16,Math.min(36,(r.width-26)/2.6))+'px'); n.style.setProperty('--nvsf',Math.max(11,Math.min(28,(r.width-30)/6.6))+'px'); }
   if(r.top<top) dy=top-r.top; else if(r.bottom>bot) dy=bot-r.bottom;
   if(r.height>bot-top) dy=top-r.top;
   if(Math.abs(dy)<1) return;
