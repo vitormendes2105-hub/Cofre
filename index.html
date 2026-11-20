@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261118-3">
+<meta name="cofre-version" content="20261119-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -393,7 +393,7 @@
   }
   /* Em pé (iPad vertical): mesma barra lateral da horizontal, só mais estreita */
   @media (min-width:700px) and (max-width:899px){
-    #mainnav.nv-left:not(.collapsed),#mainnav.nv-right:not(.collapsed){width:176px;padding:16px 8px 12px;}
+    #mainnav.nv-left:not(.collapsed),#mainnav.nv-right:not(.collapsed){width:170px;padding:16px 6px 12px;}
     #mainnav.nv-left:not(.collapsed) .nvbrand,#mainnav.nv-right:not(.collapsed) .nvbrand{font-size:28px;padding:0 10px 6px;}
     #mainnav.nv-left:not(.collapsed) .nvlabel,#mainnav.nv-right:not(.collapsed) .nvlabel{padding:10px 10px 4px;font-size:9.5px;}
     #mainnav.nv-left:not(.collapsed) button:not(.navgrip):not(.navtoggle),#mainnav.nv-right:not(.collapsed) button:not(.navgrip):not(.navtoggle){height:40px;gap:9px;padding:0 10px;font-size:13px;}
@@ -436,6 +436,17 @@
   /* Em pé: a barra abre por cima do conteúdo; o conteúdo usa a tela toda */
   body.navo .wordmark{display:inline!important;} body.navo .pagetitle{display:none!important;}
   body.navo #mainnav:not(.collapsed){z-index:60;box-shadow:0 24px 60px -18px rgba(20,30,40,.45),inset 0 1px 0 rgba(255,255,255,.6),0 0 0 .5px rgba(60,60,67,.2);}
+  /* Atalhos em gotinha (buscar no banco / abrir Meu Pluggy) logo abaixo do "cofre" */
+  .nvquick{display:none;}
+  @media (min-width:700px){
+    #mainnav.nv-left:not(.collapsed) .nvquick,#mainnav.nv-right:not(.collapsed) .nvquick{display:flex;justify-content:center;gap:20px;margin:12px 0 10px;}
+    #mainnav .nvquick button:not(.navgrip):not(.navtoggle){width:54px!important;height:58px!important;padding:0!important;gap:1px!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;border-radius:50% 50% 50% 50% / 62% 62% 38% 38%!important;background:rgba(255,255,255,.4)!important;border:1px solid rgba(255,255,255,.75)!important;color:var(--brand-deep)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.85),inset 0 -6px 10px -6px rgba(11,77,61,.18),0 8px 16px -10px rgba(20,30,40,.4),0 0 0 .5px rgba(60,60,67,.14)!important;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+    #mainnav .nvquick button:disabled{opacity:.5;}
+    #mainnav .nvquick .nq{display:block;font:600 9px 'Inter',sans-serif;letter-spacing:.02em;}
+    #mainnav.nv-left:not(.collapsed) .nvsum,#mainnav.nv-right:not(.collapsed) .nvsum{padding-bottom:8px;}
+    #mainnav.nv-left:not(.collapsed) .fl,#mainnav.nv-right:not(.collapsed) .fl{white-space:nowrap;}
+    #mainnav.nv-left:not(.collapsed) .navtoggle,#mainnav.nv-right:not(.collapsed) .navtoggle{margin-top:0;}
+  }
   /* ===== Painel em blocos ===== */
   .dgrid{display:grid;grid-template-columns:repeat(48,minmax(0,1fr));grid-auto-flow:row dense;gap:0;align-items:start;margin:0 -7px;}
   .gb{grid-column:span var(--sp,48);min-width:0;position:relative;border-radius:30px;padding:7px;container-type:inline-size;}
@@ -1017,6 +1028,7 @@ function render(){
     </header>
     <nav id="mainnav" class="nv-${navPos()} nv-a-${navAlign()}${navCollapsed()?' collapsed':''}" style="${navVars()}">${navCollapsed()?'':NAVGRIP}
       <div class="nvbrand">cofre</div>
+      <div class="nvquick"><button onclick="inboxFetchNow()" title="Buscar no banco" ${ui.inbox&&ui.inbox.fetching?'disabled':''}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg><span class="nq">${ui.inbox&&ui.inbox.fetching?'Buscando':'Buscar'}</span></button><button onclick="meuPluggyAbrir()" title="Atualizar no Meu Pluggy"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg><span class="nq">Pluggy</span></button></div>
       ${navTabsHtml()}
       ${navSummary()}
       ${navToggleBtn()}
@@ -1030,7 +1042,7 @@ function render(){
   if(ui.modal) renderModal();
   if(ui.confirmBox) renderConfirm();
 }
-function setTab(id){ ui.navOpen=false; if(ui.tab!==id){ ui.editLayout=null; ui.editOrient=null; } ui.tab = id; render(); }
+function setTab(id){ if(ui.tab!==id){ ui.editLayout=null; ui.editOrient=null; } ui.tab = id; render(); }
 function renderContent(){
   const c = document.getElementById('content');
   document.body.classList.toggle('nobg',!!(state.settings&&state.settings.nobg)); navAttrs();
@@ -1241,7 +1253,7 @@ function chatCard(){
 // ===== Navegação, projeção unificada, parcelas e plano de meta =====
 const NAVI={caixinhas:'<path d="M8 3h8M7 6h10"/><path d="M6 9a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3z"/><path d="M10 14h4"/>',dashboard:'<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',lancamentos:'<path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/>',contas:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',importar:'<path d="M12 3v12M12 15l-4-4M12 15l4-4M4 20h16"/>',cartoes:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/>',categorias:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>',balanco:'<path d="M5 20V10M12 20V4M19 20v-7"/>',orcamentos:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 15h2"/>'};
 // ===== Ordem das abas (você escolhe; vale nos seus aparelhos) =====
-const NAV_TABS=[['dashboard','Painel'],['balanco','Balanço do mês'],['orcamentos','Orçamentos'],['caixinhas','Caixinhas'],['lancamentos','Lançamentos'],['contas','Contas a pagar'],['cartoes','Cartões'],['categorias','Configurações']];
+const NAV_TABS=[['dashboard','Painel'],['balanco','Balanço do mês'],['orcamentos','Orçamentos'],['caixinhas','Caixinhas'],['lancamentos','Lançamentos'],['contas','Contas'],['cartoes','Cartões'],['categorias','Config.']];
 const NAV_SPLIT=5; // as 5 primeiras ficam em "Menu", as demais em "Geral"
 function tabOrder(){ const def=NAV_TABS.map(x=>x[0]), o=(((state.settings||{}).tabOrder)||[]).filter((k,i,a)=>def.includes(k)&&a.indexOf(k)===i); def.forEach(k=>{ if(!o.includes(k)) o.push(k); }); return o; }
 function tabHidden(){ const h=((state.settings||{}).tabHidden)||[]; return h.filter(k=>k!=='categorias'&&NAV_TABS.some(x=>x[0]===k)); }
@@ -1718,8 +1730,7 @@ window.addEventListener('orientationchange',()=>{ clearTimeout(navFit._t); navFi
 function navAttrs(){ document.body.setAttribute('data-nav',navPos()); document.body.classList.toggle('navc',navCollapsed()||navOverlay()); document.body.classList.toggle('navo',navOverlay()); try{ requestAnimationFrame(navFit); }catch(_){} }
 function navToggleBtn(){ if(!navCollapsible()&&!navOverlay()) return ''; const c=navCollapsed(), ov=navOverlay(); return `<button class="navtoggle" onclick="navToggleClick()" title="${c?'Abrir abas':'Fechar abas'}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ov?(c?'<path d="M4 7h16M4 12h16M4 17h16"/>':'<path d="M6 6l12 12M18 6L6 18"/>'):(c?(NAVI[ui.tab]||''):'<path d="M5 12h14"/>')}</svg></button>`; }
 function navToggleClick(){ if(window.__navDragged) return; if(navOverlay()){ ui.navOpen=!ui.navOpen; render(); return; } setSetting('navCollapsed',!navCollapsed()); }
-// toque fora da barra aberta (em pé) fecha a barra
-document.addEventListener('click',e=>{ if(!navOverlay()||!ui.navOpen) return; if(e.target.closest&&e.target.closest('#mainnav')) return; e.stopPropagation(); e.preventDefault(); ui.navOpen=false; render(); },true);
+// (a barra aberta em pé só fecha pelo botão X)
 (function(){ let last=navOverlay(); window.addEventListener('resize',()=>{ clearTimeout(navOverlay._t); navOverlay._t=setTimeout(()=>{ const o=navOverlay(); if(o!==last){ last=o; ui.navOpen=false; const a=document.activeElement; if(!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) render(); } },200); }); })();
 function navRows(){
   const st=state.settings||{};
