@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261120-2">
+<meta name="cofre-version" content="20261120-3">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -463,6 +463,12 @@
     #mainnav .nvquick button:not(.navgrip):not(.navtoggle){flex:1 1 0!important;width:auto!important;min-width:34px!important;max-width:76px!important;height:38px!important;border-radius:13px!important;}
     #mainnav .nvquick .nq{display:none!important;}
   }
+  /* Barra em cima/embaixo: atalhos (buscar no banco / Meu Pluggy) ao lado do cofre e antes das abas; pontinhos e botão de abrir/fechar sempre visíveis */
+  #mainnav.nv-top:not(.collapsed) .nvquick,#mainnav.nv-bottom:not(.collapsed) .nvquick{display:flex;align-items:center;gap:4px;flex:none;margin:0 6px 0 2px;padding-right:8px;border-right:1px solid rgba(60,60,67,.18);}
+  #mainnav.nv-top .nvquick button:not(.navgrip):not(.navtoggle),#mainnav.nv-bottom .nvquick button:not(.navgrip):not(.navtoggle){flex:none!important;width:34px!important;min-width:34px!important;max-width:34px!important;height:34px!important;border-radius:11px!important;padding:0!important;}
+  @media (max-width:520px){ #mainnav.nv-top .nvquick button:not(.navgrip):not(.navtoggle),#mainnav.nv-bottom .nvquick button:not(.navgrip):not(.navtoggle){width:30px!important;min-width:30px!important;max-width:30px!important;height:30px!important;} }
+  #mainnav.nv-top:not(.collapsed) .navgrip,#mainnav.nv-bottom:not(.collapsed) .navgrip{position:sticky;left:0;z-index:3;flex:none;}
+  #mainnav.nv-top:not(.collapsed) .navtoggle,#mainnav.nv-bottom:not(.collapsed) .navtoggle{position:sticky;right:0;z-index:3;flex:none;}
   @media (max-height:520px){
     #mainnav.nv-left:not(.collapsed),#mainnav.nv-right:not(.collapsed){padding-top:12px;padding-bottom:10px;}
     #mainnav.nv-left:not(.collapsed) .nvbrand,#mainnav.nv-right:not(.collapsed) .nvbrand{padding-bottom:2px;}
@@ -1743,7 +1749,9 @@ function navLook(k,v,final){ state.settings=state.settings||{}; state.settings[k
   if(final){ saveState(); if(k==='navLine') render(); } }
 function navLookReset(){ state.settings=state.settings||{}; ['navAlpha','navBlur','navLine'].forEach(k=>{ delete state.settings[k]; }); saveState(); render(); }
 function navFit(){
-  const n=document.getElementById('mainnav'); if(!n||!navVert()) return;
+  const n=document.getElementById('mainnav'); if(!n) return;
+  if(!navVert()){ const r0=n.getBoundingClientRect(), L=8, R=innerWidth-8; let dx=0; if(r0.width>0){ if(r0.width>R-L||r0.left<L) dx=L-r0.left; else if(r0.right>R) dx=R-r0.right; }
+    if(Math.abs(dx)>=1) n.style.setProperty('--nvshift',((parseFloat(n.style.getPropertyValue('--nvshift'))||0)+dx)+'px'); return; }
   const r=n.getBoundingClientRect(), top=8, bot=innerHeight-8; let dy=0;
   if(r.width>0){ n.style.setProperty('--nvbf',Math.max(16,Math.min(36,(r.width-26)/2.6))+'px'); n.style.setProperty('--nvsf',Math.max(11,Math.min(28,(r.width-30)/6.6))+'px'); }
   if(r.top<top) dy=top-r.top; else if(r.bottom>bot) dy=bot-r.bottom;
@@ -1768,7 +1776,7 @@ function navRows(){
    +row('Desfoque do vidro','Quanto o fundo atrás da barra fica borrado. Zero é totalmente nítido.',`<input type="range" min="0" max="40" step="1" value="${navBlur()}" oninput="navLook('navBlur',this.value,0)" onchange="navLook('navBlur',this.value,1)" style="width:150px">`)
    +row('Linha da aba ativa','A linha fininha ao lado da aba em que você está.',`<select onchange="navLook('navLine',this.value,1)" style="width:auto">${Object.entries(NAV_LINES).map(([v,x])=>`<option value="${v}" ${v===navLineKey()?'selected':''}>${x[0]}</option>`).join('')}</select>`)
    +row('Visual da barra','Volta transparência, desfoque e linha para o padrão.',`<button class="chip" onclick="navLookReset()">Restaurar padrão</button>`)
-   +row('Posição da barra','Você também pode arrastar a barra pelos pontinhos e soltar perto de uma borda. Em cima e embaixo ela fica na horizontal.',`<select onchange="navSetPos(this.value)" style="width:auto">${opts.map(([v,l])=>`<option value="${v}" ${v===navPos()?'selected':''}>${l}</option>`).join('')}</select>`);
+   +row('Posição da barra','Você também pode arrastar a barra pelos pontinhos e soltar perto de uma borda. Em cima e embaixo ela fica na horizontal.',`<select onchange="navSetPos(this.value)" style="width:auto">${opts.map(([v,l])=>`<option value="${v}" ${v===navPos()?'selected':''}>${l}</option>`).join('')}</select> <button class="chip" onclick="navSetPos('left')">Restaurar posição</button>`);
 }
 (function(){
   let d=null;
