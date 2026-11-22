@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261122-1">
+<meta name="cofre-version" content="20261122-2">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -1869,21 +1869,22 @@ function gbSplit(html){
 }
 function gbTabItems(tab,mode){
   let r=gbSplit(TAB_VIEWS[tab]());
-  const keys=r.items.filter(i=>i.col).map(i=>i.col);
-  if(mode&&keys.length){ // no modo de edição, mostra todos os blocos que recolhem abertos ou fechados, conforme o que está sendo editado
-    const cl=state.dashboardPrefs.collapsed, saved={};
-    keys.forEach(k=>{ saved[k]=Object.prototype.hasOwnProperty.call(cl,k)?[cl[k]]:null; cl[k]=(mode==='c'); });
-    try{ r=gbSplit(TAB_VIEWS[tab]()); } finally{ keys.forEach(k=>{ if(saved[k]) cl[k]=saved[k][0]; else delete cl[k]; }); }
+  const withCol=r.items.filter(i=>i.col);
+  if(mode&&withCol.length){ // no modo de edição, cada bloco que recolhe aparece no estado que está sendo editado (aberto ou fechado), bloco a bloco
+    const cl=state.dashboardPrefs.collapsed, saved={}, want={};
+    withCol.forEach(i=>{ want[i.col]=(ui.editSt&&ui.editSt[i.id])?(ui.editSt[i.id]==='c'):!!cl[i.col]; });
+    Object.keys(want).forEach(k=>{ saved[k]=Object.prototype.hasOwnProperty.call(cl,k)?[cl[k]]:null; cl[k]=want[k]; });
+    try{ r=gbSplit(TAB_VIEWS[tab]()); } finally{ Object.keys(want).forEach(k=>{ if(saved[k]) cl[k]=saved[k][0]; else delete cl[k]; }); }
   }
   return r;
 }
 const GBGRIP='<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
-function gbCtl(id,span,hid,hset,openLike,grp,canStack){ const p=gbPrefs();
-  return `<div class="gctl"><span class="gh" onpointerdown="gbDragStart(event,'${id}')" title="Arraste para mudar de lugar">${GBGRIP}</span><span class="gw">${grp==='sub'?'na coluna':Math.round(span/COLS*100)+'%'}</span>${grp?'':`<button class="${p.stretch[id]?'on':''}" onclick="gbStretch('${id}')" title="Faz o bloco acompanhar a altura do vizinho da mesma linha">Esticar</button>`}${hset&&openLike?`<button onclick="gbAutoH('${id}')" title="Volta a altura automática">Altura auto</button>`:''}<button onclick="${hid?'gbShow':'gbHide'}('${id}')">${hid?'Mostrar':'Ocultar'}</button></div>`; }
+function gbCtl(id,span,hid,hset,openLike,grp,colSt){ const p=gbPrefs();
+  return `<div class="gctl"><span class="gh" onpointerdown="gbDragStart(event,'${id}')" title="Arraste para mudar de lugar">${GBGRIP}</span><span class="gw">${grp==='sub'?'na coluna':Math.round(span/COLS*100)+'%'}</span>${colSt?`<button class="${colSt==='o'?'on':''}" onclick="gbEditSt('${id}','o')" title="Edita o tamanho deste bloco quando está aberto">Aberto</button><button class="${colSt==='c'?'on':''}" onclick="gbEditSt('${id}','c')" title="Edita o tamanho deste bloco quando está fechado">Fechado</button>`:''}${grp?'':`<button class="${p.stretch[id]?'on':''}" onclick="gbStretch('${id}')" title="Faz o bloco acompanhar a altura do vizinho da mesma linha">Esticar</button>`}${hset&&openLike?`<button onclick="gbAutoH('${id}')" title="Volta a altura automática">Altura auto</button>`:''}<button onclick="${hid?'gbShow':'gbHide'}('${id}')">${hid?'Mostrar':'Ocultar'}</button></div>`; }
 function layoutBar(){ const m=ui.editLayout;
   if(!m) return `<div class="lay-bar"><button class="chip" onclick="toggleLayoutEdit()">Organizar blocos</button></div>`;
   const or=gbOrient(), real=gbCurOrient(), hasCol=GBX.items.some(i=>i.col);
-  return `<div class="lay-bar"><div class="lay-seg"><button class="${or==='h'?'on':''}" onclick="setLayoutOrient('h')">Tela horizontal</button><button class="${or==='v'?'on':''}" onclick="setLayoutOrient('v')">Tela vertical</button></div>${hasCol?`<div class="lay-seg"><button class="${m==='o'?'on':''}" onclick="setLayoutMode('o')">Blocos abertos</button><button class="${m==='c'?'on':''}" onclick="setLayoutMode('c')">Blocos fechados</button></div>`:''}<span class="lay-hint">Editando o layout desta tela ${or==='h'?'na horizontal':'na vertical'}${hasCol?`, com os blocos ${m==='o'?'abertos':'fechados (vale para os que recolhem)'}`:''}.${or!==real?' Gire o aparelho para ver ao vivo.':''} Puxe o cantinho para mudar o tamanho e arraste pelos pontinhos para mudar de lugar. Solte na metade de baixo de um bloco estreito para deixar um embaixo do outro.</span><button class="chip" onclick="gbReset()">Restaurar padrão</button><button class="chip on" onclick="toggleLayoutEdit()">Concluir</button></div>`; }
+  return `<div class="lay-bar"><div class="lay-seg"><button class="${or==='h'?'on':''}" onclick="setLayoutOrient('h')">Tela horizontal</button><button class="${or==='v'?'on':''}" onclick="setLayoutOrient('v')">Tela vertical</button></div><span class="lay-hint">Editando o layout desta tela ${or==='h'?'na horizontal':'na vertical'}${hasCol?'. Nos blocos que recolhem, use Aberto/Fechado para editar o tamanho de cada estado, bloco a bloco':''}.${or!==real?' Gire o aparelho para ver ao vivo.':''} Puxe o cantinho para mudar o tamanho e arraste pelos pontinhos para mudar de lugar. Solte na metade de baixo de um bloco estreito para deixar um embaixo do outro.</span><button class="chip" onclick="gbReset()">Restaurar padrão</button><button class="chip on" onclick="toggleLayoutEdit()">Concluir</button></div>`; }
 function gridView(tab){
   const mode=ui.editLayout||null, dash=tab==='dashboard'; let head;
   if(dash){ head=monthNav(); GBX={tab,items:BLOCK_ORDER.map(id=>({id,t:BLOCK_DEF[id].t,col:BLOCK_DEF[id].col})),by:{},html:{}}; }
@@ -1893,25 +1894,25 @@ function gridView(tab){
   p.blocks.forEach((id,bi)=>{
     const d=gbDef(id); if(!d) return;
     const hid=!!p.hidden[id]; if(hid&&!mode) return;
-    const st=mode?mode:(gbIsClosed(id)?'c':'o'), openLike=!d.col||st==='o';
+    const st=(mode&&d.col&&ui.editSt&&ui.editSt[id])||(gbIsClosed(id)?'c':'o'), openLike=!d.col||st==='o';
     let inner;
     if(hid) inner=`<div class="card gb-off"><span>${esc(d.t)} (oculto)</span></div>`;
-    else { inner=dash?blockHtml(id,mode||undefined):GBX.html[id]; if(!inner||!String(inner).trim()) return; }
+    else { inner=dash?blockHtml(id,mode&&d.col?st:undefined):GBX.html[id]; if(!inner||!String(inner).trim()) return; }
     const stk=!!p.stack[id]&&cells.length>0;
-    cells.push({id,hid,st,openLike,inner,span:gbSpan(id,st),h:(!hid&&openLike&&p.h[id])?p.h[id]:0,sub:stk,canStack:bi>0});
+    cells.push({id,hid,st,openLike,inner,span:gbSpan(id,st),h:(!hid&&openLike&&p.h[id])?p.h[id]:0,sub:stk,col:!!d.col});
   });
   const groups=[]; cells.forEach(c=>{ if(c.sub&&groups.length) groups[groups.length-1].push(c); else groups.push([c]); });
   const cellHtml=(c,grp)=>{ const cls='gb'+(mode?' edit':'')+(c.h?' hset':'')+(!grp&&p.stretch[c.id]?' stretch':'')+(grp==='sub'?' sub':'');
-    return `<div class="${cls}" data-id="${c.id}" style="${grp?'':'--sp:'+c.span+';'}${c.h?`--h:${c.h}px`:''}">${mode?gbCtl(c.id,c.span,c.hid,!!c.h,c.openLike,grp,c.canStack):''}${c.inner}${mode&&!c.hid?`<span class="gresize" onpointerdown="gbResizeStart(event,'${c.id}','${c.st}')" title="Puxe para mudar o tamanho"></span>`:''}</div>`; };
+    return `<div class="${cls}" data-id="${c.id}" style="${grp?'':'--sp:'+c.span+';'}${c.h?`--h:${c.h}px`:''}">${mode?gbCtl(c.id,c.span,c.hid,!!c.h,c.openLike,grp,c.col?c.st:''):''}${c.inner}${mode&&!c.hid?`<span class="gresize" onpointerdown="gbResizeStart(event,'${c.id}','${c.st}')" title="Puxe para mudar o tamanho"></span>`:''}</div>`; };
   let items=''; groups.forEach(g=>{
     if(g.length===1) items+=cellHtml(g[0],'');
     else items+=`<div class="gb gstk" data-gid="${g[0].id}" data-last="${g[g.length-1].id}" style="--sp:${g[0].span}">${g.map((c,i)=>cellHtml(c,i?'sub':'head')).join('')}</div>`;
   });
   return head+layoutBar()+`<div class="dgrid" id="dgrid">${items}</div>`;
 }
-function toggleLayoutEdit(){ if(ui.editLayout){ ui.editLayout=null; ui.editOrient=null; } else { ui.editLayout='o'; ui.editOrient=gbCurOrient(); } render(); }
+function toggleLayoutEdit(){ if(ui.editLayout){ ui.editLayout=null; ui.editOrient=null; } else { ui.editLayout='e'; ui.editSt={}; ui.editOrient=gbCurOrient(); } render(); }
 function setLayoutOrient(o){ ui.editOrient=o; render(); }
-function setLayoutMode(m){ ui.editLayout=m; render(); }
+function gbEditSt(id,v){ ui.editSt=ui.editSt||{}; ui.editSt[id]=v; render(); }
 function gbHide(id){ gbPrefs().hidden[id]=true; saveState(); render(); }
 function gbShow(id){ delete gbPrefs().hidden[id]; saveState(); render(); }
 function gbStretch(id){ const p=gbPrefs(); if(p.stretch[id]) delete p.stretch[id]; else p.stretch[id]=true; saveState(); render(); }
@@ -1943,7 +1944,7 @@ document.addEventListener('pointermove',e=>{ if(!GR) return;
 function gbResizeEnd(){ if(!GR) return; const g=GR; GR=null; document.body.style.userSelect=''; g.el.classList.remove('resizing');
   const p=gbPrefs(), d=gbDef(g.id), k=(d.col&&g.st==='c')?'c':'o';
   if(!g.sub){ const v=(p.span[g.id]&&typeof p.span[g.id]==='object')?p.span[g.id]:{}; v[k]=g.span; p.span[g.id]=v; }
-  if(g.h!=null){ if(g.snapRow){ delete p.h[g.id]; p.stretch[g.id]=true; } else p.h[g.id]=g.h; } saveState(); render(); }
+  if(g.h!=null){ p.h[g.id]=g.h; if(g.snapRow) delete p.stretch[g.id]; } saveState(); render(); }
 document.addEventListener('pointerup',gbResizeEnd); document.addEventListener('pointercancel',gbResizeEnd);
 // --- arrastar pelos pontinhos: mudar de lugar
 let GB=null;
