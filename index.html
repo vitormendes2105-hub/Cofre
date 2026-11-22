@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261122-2">
+<meta name="cofre-version" content="20261122-3">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -486,8 +486,12 @@
   .gb.hset>:not(.gctl):not(.gresize){height:var(--h);overflow:auto;}
   .gb.edit{outline:2px dashed rgba(11,77,61,.35);outline-offset:-4px;}
   .gb.edit>:not(.gctl):not(.gresize){pointer-events:none;}
-  .gb.edit{min-height:96px;}
-  .gb.edit>.gctl{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);margin:0;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);max-width:calc(100% - 24px);}
+  .gb.edit>.gctl{position:absolute;top:-6px;right:16px;left:auto;transform:none;margin:0;width:auto;max-width:none;display:flex;flex-wrap:nowrap;gap:5px;align-items:center;background:none;border:none;box-shadow:none;padding:0;z-index:8;}
+  .gb.mopen{z-index:30;}
+  .gctl>.gh,.gctl>.gdots{width:26px;height:26px;padding:0;justify-content:center;align-items:center;border-radius:50%;background:rgba(255,255,255,.82);border:1px solid rgba(11,77,61,.18);color:var(--muted);box-shadow:0 2px 8px -3px rgba(4,42,29,.25);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);display:flex;font-size:16px;line-height:1;cursor:pointer;}
+  .gctl>.gh{cursor:grab;} .gctl>.gdots.on{background:var(--brand-deep);color:#fff;}
+  .gmenu{display:none;position:absolute;top:calc(100% + 6px);right:0;width:max-content;max-width:min(330px,80vw);flex-wrap:wrap;justify-content:center;align-items:center;gap:3px;background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:18px;padding:4px;box-shadow:0 10px 26px -8px rgba(4,42,29,.35);}
+  .gb.mopen .gmenu{display:flex;}
   .gb.gstk{display:flex;flex-direction:column;padding:0;border-radius:0;container-type:normal;grid-column:span var(--sp,48);}
   .gb.gstk>.gb{grid-column:auto;}
   .gb.dragging{opacity:.45;} .gb.resizing{outline-color:var(--brand);}
@@ -1880,7 +1884,7 @@ function gbTabItems(tab,mode){
 }
 const GBGRIP='<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
 function gbCtl(id,span,hid,hset,openLike,grp,colSt){ const p=gbPrefs();
-  return `<div class="gctl"><span class="gh" onpointerdown="gbDragStart(event,'${id}')" title="Arraste para mudar de lugar">${GBGRIP}</span><span class="gw">${grp==='sub'?'na coluna':Math.round(span/COLS*100)+'%'}</span>${colSt?`<button class="${colSt==='o'?'on':''}" onclick="gbEditSt('${id}','o')" title="Edita o tamanho deste bloco quando está aberto">Aberto</button><button class="${colSt==='c'?'on':''}" onclick="gbEditSt('${id}','c')" title="Edita o tamanho deste bloco quando está fechado">Fechado</button>`:''}${grp?'':`<button class="${p.stretch[id]?'on':''}" onclick="gbStretch('${id}')" title="Faz o bloco acompanhar a altura do vizinho da mesma linha">Esticar</button>`}${hset&&openLike?`<button onclick="gbAutoH('${id}')" title="Volta a altura automática">Altura auto</button>`:''}<button onclick="${hid?'gbShow':'gbHide'}('${id}')">${hid?'Mostrar':'Ocultar'}</button></div>`; }
+  return `<div class="gctl"><span class="gh" onpointerdown="gbDragStart(event,'${id}')" title="Arraste para mudar de lugar">${GBGRIP}</span><button class="gdots${ui.menuId===id?' on':''}" onclick="gbMenu(this,\'${id}\')" title="Opções do bloco">⋯</button><div class="gmenu"><span class="gw">${grp==='sub'?'na coluna':Math.round(span/COLS*100)+'%'}</span>${colSt?`<button class="${colSt==='o'?'on':''}" onclick="gbEditSt('${id}','o')" title="Edita o tamanho deste bloco quando está aberto">Aberto</button><button class="${colSt==='c'?'on':''}" onclick="gbEditSt('${id}','c')" title="Edita o tamanho deste bloco quando está fechado">Fechado</button>`:''}${grp?'':`<button class="${p.stretch[id]?'on':''}" onclick="gbStretch('${id}')" title="Faz o bloco acompanhar a altura do vizinho da mesma linha">Esticar</button>`}${hset&&openLike?`<button onclick="gbAutoH('${id}')" title="Volta a altura automática">Altura auto</button>`:''}<button onclick="${hid?'gbShow':'gbHide'}('${id}')">${hid?'Mostrar':'Ocultar'}</button></div></div>`; }
 function layoutBar(){ const m=ui.editLayout;
   if(!m) return `<div class="lay-bar"><button class="chip" onclick="toggleLayoutEdit()">Organizar blocos</button></div>`;
   const or=gbOrient(), real=gbCurOrient(), hasCol=GBX.items.some(i=>i.col);
@@ -1902,7 +1906,7 @@ function gridView(tab){
     cells.push({id,hid,st,openLike,inner,span:gbSpan(id,st),h:(!hid&&openLike&&p.h[id])?p.h[id]:0,sub:stk,col:!!d.col});
   });
   const groups=[]; cells.forEach(c=>{ if(c.sub&&groups.length) groups[groups.length-1].push(c); else groups.push([c]); });
-  const cellHtml=(c,grp)=>{ const cls='gb'+(mode?' edit':'')+(c.h?' hset':'')+(!grp&&p.stretch[c.id]?' stretch':'')+(grp==='sub'?' sub':'');
+  const cellHtml=(c,grp)=>{ const cls='gb'+(mode?' edit':'')+(mode&&ui.menuId===c.id?' mopen':'')+(c.h?' hset':'')+(!grp&&p.stretch[c.id]?' stretch':'')+(grp==='sub'?' sub':'');
     return `<div class="${cls}" data-id="${c.id}" style="${grp?'':'--sp:'+c.span+';'}${c.h?`--h:${c.h}px`:''}">${mode?gbCtl(c.id,c.span,c.hid,!!c.h,c.openLike,grp,c.col?c.st:''):''}${c.inner}${mode&&!c.hid?`<span class="gresize" onpointerdown="gbResizeStart(event,'${c.id}','${c.st}')" title="Puxe para mudar o tamanho"></span>`:''}</div>`; };
   let items=''; groups.forEach(g=>{
     if(g.length===1) items+=cellHtml(g[0],'');
@@ -1910,8 +1914,10 @@ function gridView(tab){
   });
   return head+layoutBar()+`<div class="dgrid" id="dgrid">${items}</div>`;
 }
-function toggleLayoutEdit(){ if(ui.editLayout){ ui.editLayout=null; ui.editOrient=null; } else { ui.editLayout='e'; ui.editSt={}; ui.editOrient=gbCurOrient(); } render(); }
+function toggleLayoutEdit(){ if(ui.editLayout){ ui.editLayout=null; ui.editOrient=null; } else { ui.editLayout='e'; ui.editSt={}; ui.menuId=null; ui.editOrient=gbCurOrient(); } render(); }
 function setLayoutOrient(o){ ui.editOrient=o; render(); }
+function gbMenu(btn,id){ const gb=btn.closest('.gb'), was=gb.classList.contains('mopen'); document.querySelectorAll('.gb.mopen').forEach(x=>x.classList.remove('mopen')); document.querySelectorAll('.gdots.on').forEach(x=>x.classList.remove('on')); ui.menuId=was?null:id; if(!was){ gb.classList.add('mopen'); btn.classList.add('on'); } }
+document.addEventListener('pointerdown',e=>{ if(!ui.menuId) return; if(e.target.closest&&e.target.closest('.gctl')) return; ui.menuId=null; document.querySelectorAll('.gb.mopen').forEach(x=>x.classList.remove('mopen')); document.querySelectorAll('.gdots.on').forEach(x=>x.classList.remove('on')); });
 function gbEditSt(id,v){ ui.editSt=ui.editSt||{}; ui.editSt[id]=v; render(); }
 function gbHide(id){ gbPrefs().hidden[id]=true; saveState(); render(); }
 function gbShow(id){ delete gbPrefs().hidden[id]; saveState(); render(); }
