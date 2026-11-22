@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261121-1">
+<meta name="cofre-version" content="20261121-2">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -519,6 +519,12 @@
   @media (hover:none) and (pointer:coarse){
     input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{font-size:16px !important;}
   }
+
+  .goalc-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+  .goalc{display:flex;align-items:center;justify-content:space-between;gap:8px 10px;flex-wrap:wrap;padding:10px 12px;border-radius:16px;background:var(--surface-2);min-width:0;}
+  .goalc-t{display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 110px;}
+  .goalc-n{font-weight:600;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .goalc .chip{flex:0 0 auto;}
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 </head>
@@ -1176,19 +1182,24 @@ function monthsUntil(ym){
   return Math.max(1, (y-n.getFullYear())*12 + (m-(n.getMonth()+1)));
 }
 function metasCard(){
-  const goals = state.goals || [];
-  const list = goals.map(g=>{
-    const p = g.target>0 ? g.saved/g.target : 0, left = Math.max(0,g.target-g.saved);
-    const sub = left<=0 ? 'Meta alcançada' : `Guarde ${fmt(left/monthsUntil(g.deadline))}/mês até ${g.deadline.split('-').reverse().join('/')}`;
-    return `<div class="goal">${ringSvg(p,64)}<div><div class="gname">${g.name}</div><div class="gval">${fmt(g.saved)} <small>de ${fmt(g.target)}</small></div><div class="gsub">${sub}</div></div>
-      <div class="gbtns"><button class="chip" onclick="depositGoal('${g.id}')">Guardar</button><button class="chip x" onclick="removeGoal('${g.id}')">Excluir</button></div></div>`;
-  }).join('');
-  const c=!!state.dashboardPrefs.collapsed.metas;
-  const plans=goals.map(g=>{const pl=planoMeta(g);return pl?`<div class="gsub" style="margin:8px 0 4px"><b>${g.name}</b></div>${pl}`:'';}).join('');
-  const names=[...new Set(state.categories.filter(x=>x.type==='expense').map(x=>x.name))];
-  const cut=state.cuttable||[];
-  const chips=goals.length?`<div class="gsub" style="margin:14px 0 6px">Categorias que eu aceito reduzir:</div><div class="chips">${names.map(n=>`<button class="chip ${cut.includes(n)?'on':''}" data-n="${n}" onclick="toggleCut(this.dataset.n)">${n}</button>`).join('')}</div>`:'';
-  return `<div class="card">${colHead('metas','Metas',`<button class="chip" onclick="addGoal()">Nova meta</button>`)}${c?'':`<div style="margin-top:14px;">${list||'<div class="empty">Crie uma meta com valor e prazo e acompanhe quanto guardar por mês.</div>'}${plans}${chips}</div>`}</div>`;
+  const goals=state.goals||[], c=!!state.dashboardPrefs.collapsed.metas;
+  const list=goals.map(g=>{ const p=g.target>0?g.saved/g.target:0;
+    return `<div class="goalc"><div class="goalc-t">${ringSvg(p,40)}<span class="goalc-n" title="${esc(g.name)}">${esc(g.name)}</span></div><button class="chip" data-id="${g.id}" onclick="goalDetail(this.dataset.id)">Ver detalhes</button></div>`; }).join('');
+  return `<div class="card">${colHead('metas','Metas',`<button class="chip" onclick="addGoal()">Nova meta</button>`)}${c?'':`<div class="goalc-list">${list||'<div class="empty">Crie uma meta com valor e prazo e acompanhe quanto guardar por mês.</div>'}</div>`}</div>`;
+}
+function goalDetail(id){
+  const g=(state.goals||[]).find(x=>x.id===id); if(!g) return;
+  const p=g.target>0?g.saved/g.target:0, left=Math.max(0,g.target-g.saved), n=state.cuttable||[];
+  const sub=left<=0?'Meta alcançada!':`Guarde <b>${fmt(left/monthsUntil(g.deadline))}/mês</b> até ${g.deadline.split('-').reverse().join('/')}.`;
+  openForm(g.name,[],()=>null,'Fechar');
+  ui.modal.extra=`<div style="display:flex;gap:14px;align-items:center;margin-bottom:12px">${ringSvg(p,64)}<div><div class="gval">${fmt(g.saved)} <small>de ${fmt(g.target)}</small></div><div class="gsub">${sub}</div></div></div>${planoMeta(g)}${n.length?'':`<button class="chip" style="margin:6px 0" onclick="goCutSettings()">Escolher gastos que aceito reduzir</button>`}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="chip" onclick="closeModal();depositGoal('${g.id}')">Guardar valor</button><button class="chip x" onclick="closeModal();removeGoal('${g.id}')">Excluir meta</button></div>`;
+  renderModal2();
+}
+function goCutSettings(){ state.dashboardPrefs.collapsed.cfg_cut=false; closeModal(); setTab('categorias'); }
+function cutCard(){
+  const names=[...new Set(state.categories.filter(x=>x.type==='expense').map(x=>x.name))], cut=state.cuttable||[];
+  const body=`<p class="gsub" style="margin:0 0 10px">Marque uma vez e fica salvo. As metas usam esta lista para sugerir onde reduzir e quanto guardar por mês.</p><div class="chipcloud">${names.map(x=>`<button class="chip ${cut.includes(x)?'on':''}" data-n="${esc(x)}" onclick="toggleCut(this.dataset.n)">${esc(x)}</button>`).join('')}</div>`;
+  return cfgCard('cfg_cut',`Gastos que aceito reduzir (${cut.filter(x=>names.includes(x)).length})`,body);
 }
 
 // ===== Chat do Cofre (responde com os seus dados, sem internet) =====
@@ -1358,7 +1369,7 @@ function planoMeta(g){
   const gap=need-cap, avgCat=n=>pm.hist.reduce((a,m)=>a+(catMap(m)[n]||0),0)/pm.hist.length;
   const opts=(state.cuttable||[]).map(n=>({n,avg:avgCat(n),max:avgCat(n)*0.3})).filter(o=>o.max>0), maxCut=opts.reduce((a,o)=>a+o.max,0);
   let h=`Você precisa guardar <b>${fmt(need)}/mês</b> e hoje sobram <b>${fmt(cap)}</b>. Faltam <b>${fmt(gap)}/mês</b>.`;
-  if(!opts.length) return `<div class="plan">${h}<br>Marque abaixo as categorias que você aceita reduzir e eu sugiro quanto.</div>`;
+  if(!opts.length) return `<div class="plan">${h}<br>Escolha em Configurações quais gastos você aceita reduzir e eu sugiro quanto.</div>`;
   if(maxCut>=gap){ const f=gap/maxCut; h+='<br>Uma forma de chegar lá:'+opts.map(o=>`<br>• <b>${o.n}</b>: reduzir ${fmt(o.max*f)} (de ${fmt(o.avg)}, ${pct(o.max*f/o.avg)}%)`).join(''); }
   else h+=`<br>Reduzir até 30% das categorias marcadas libera só ${fmt(maxCut)}/mês, o que não basta. Opções: estender o prazo para cerca de <b>${Math.ceil(left/(cap+maxCut))} meses</b>, diminuir a meta ou aumentar a renda.`;
   return `<div class="plan">${h}</div>`;
@@ -1493,7 +1504,7 @@ function settingsView(){
     ${row('Nível do fosco (olhinho)','Quanto os números ficam embaçados quando o olhinho está ligado. Mais para a direita, mais difícil de ler. Vale só neste aparelho.',`<span style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><input type="range" min="0" max="100" step="5" value="${privLevel()}" oninput="privLook(this.value,0)" onchange="privLook(this.value,1)" style="width:150px"><span class="mv-sample">R$ 1.234,56</span></span>`)}
     ${navRows()}
     ${row('Gravura ao fundo','Mostra ou esconde o desenho do casarão atrás das telas.',`<button class="chip ${st.nobg?'':'on'}" onclick="setSetting('nobg',${!st.nobg})">${st.nobg?'Desligada':'Ligada'}</button>`)}
-  </div>`+tabOrderCard()+categoriesView();
+  </div>`+cutCard()+tabOrderCard()+categoriesView();
 }
 
 
