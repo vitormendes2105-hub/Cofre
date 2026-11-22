@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261121-2">
+<meta name="cofre-version" content="20261122-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -486,7 +486,10 @@
   .gb.hset>:not(.gctl):not(.gresize){height:var(--h);overflow:auto;}
   .gb.edit{outline:2px dashed rgba(11,77,61,.35);outline-offset:-4px;}
   .gb.edit>:not(.gctl):not(.gresize){pointer-events:none;}
-  .gb.edit>.gctl+*{margin-top:8px;}
+  .gb.edit{min-height:96px;}
+  .gb.edit>.gctl{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);margin:0;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);max-width:calc(100% - 24px);}
+  .gb.gstk{display:flex;flex-direction:column;padding:0;border-radius:0;container-type:normal;grid-column:span var(--sp,48);}
+  .gb.gstk>.gb{grid-column:auto;}
   .gb.dragging{opacity:.45;} .gb.resizing{outline-color:var(--brand);}
   .gb.drop-t{box-shadow:0 -6px 0 -1px var(--brand);} .gb.drop-b{box-shadow:0 6px 0 -1px var(--brand);}
   .gb.drop-l{box-shadow:-6px 0 0 -1px var(--brand);} .gb.drop-r{box-shadow:6px 0 0 -1px var(--brand);}
@@ -1825,13 +1828,13 @@ function gbDef(id){ return ui.tab==='dashboard'?BLOCK_DEF[id]:GBX.by[id]; }
 function gbSlot(tab){ const p=state.dashboardPrefs; if(tab==='dashboard'){ p.layouts=p.layouts||{}; return p.layouts; } p.tabs=p.tabs||{}; return (p.tabs[tab]=p.tabs[tab]||{}); }
 function gbPrefs(){ const tab=ui.tab, p=state.dashboardPrefs, o=gbOrient(), S=gbSlot(tab), dash=tab==='dashboard';
   if(!S[o]){ const other=S[o==='h'?'v':'h']||(dash?p:null), L={};
-    if(other) ['blocks','span','hidden','h','stretch'].forEach(k=>{ if(other[k]!==undefined) L[k]=JSON.parse(JSON.stringify(other[k])); }); S[o]=L; }
+    if(other) ['blocks','span','hidden','h','stretch','stack'].forEach(k=>{ if(other[k]!==undefined) L[k]=JSON.parse(JSON.stringify(other[k])); }); S[o]=L; }
   const L=S[o], nat=dash?BLOCK_ORDER:(GBX.tab===tab?GBX.items.map(i=>i.id):[]);
   if(!Array.isArray(L.blocks)) L.blocks=dash?['resumo','resumoMes','alertas','chat','metas'].concat(p.order||[]):[];
   // bloco novo entra logo depois do que vem antes dele na ordem natural da tela
   nat.forEach((k,i)=>{ if(!L.blocks.includes(k)){ if(dash) L.blocks.push(k); else { const j=i>0?L.blocks.indexOf(nat[i-1]):-1; L.blocks.splice(j+1,0,k); } } });
   L.blocks=L.blocks.filter((k,i)=>(!dash||BLOCK_DEF[k])&&L.blocks.indexOf(k)===i);
-  L.span=L.span||{}; L.hidden=L.hidden||{}; L.h=L.h||{}; L.stretch=L.stretch||{};
+  L.span=L.span||{}; L.hidden=L.hidden||{}; L.h=L.h||{}; L.stretch=L.stretch||{}; L.stack=L.stack||{};
   Object.keys(L.span).forEach(k=>{ if(typeof L.span[k]==='number') L.span[k]={o:L.span[k]*4,c:L.span[k]*4}; });
   return L; }
 let _gbLastOr=gbCurOrient();
@@ -1875,28 +1878,34 @@ function gbTabItems(tab,mode){
   return r;
 }
 const GBGRIP='<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
-function gbCtl(id,span,hid,hset,openLike){ const p=gbPrefs();
-  return `<div class="gctl"><span class="gh" onpointerdown="gbDragStart(event,'${id}')" title="Arraste para mudar de lugar">${GBGRIP}</span><span class="gw">${Math.round(span/COLS*100)}%</span><button class="${p.stretch[id]?'on':''}" onclick="gbStretch('${id}')" title="Faz o bloco acompanhar a altura do vizinho da mesma linha">Esticar</button>${hset&&openLike?`<button onclick="gbAutoH('${id}')" title="Volta a altura automática">Altura auto</button>`:''}<button onclick="${hid?'gbShow':'gbHide'}('${id}')">${hid?'Mostrar':'Ocultar'}</button></div>`; }
+function gbCtl(id,span,hid,hset,openLike,grp,canStack){ const p=gbPrefs();
+  return `<div class="gctl"><span class="gh" onpointerdown="gbDragStart(event,'${id}')" title="Arraste para mudar de lugar">${GBGRIP}</span><span class="gw">${grp==='sub'?'na coluna':Math.round(span/COLS*100)+'%'}</span>${grp?'':`<button class="${p.stretch[id]?'on':''}" onclick="gbStretch('${id}')" title="Faz o bloco acompanhar a altura do vizinho da mesma linha">Esticar</button>`}${hset&&openLike?`<button onclick="gbAutoH('${id}')" title="Volta a altura automática">Altura auto</button>`:''}<button onclick="${hid?'gbShow':'gbHide'}('${id}')">${hid?'Mostrar':'Ocultar'}</button></div>`; }
 function layoutBar(){ const m=ui.editLayout;
   if(!m) return `<div class="lay-bar"><button class="chip" onclick="toggleLayoutEdit()">Organizar blocos</button></div>`;
   const or=gbOrient(), real=gbCurOrient(), hasCol=GBX.items.some(i=>i.col);
-  return `<div class="lay-bar"><div class="lay-seg"><button class="${or==='h'?'on':''}" onclick="setLayoutOrient('h')">Tela horizontal</button><button class="${or==='v'?'on':''}" onclick="setLayoutOrient('v')">Tela vertical</button></div>${hasCol?`<div class="lay-seg"><button class="${m==='o'?'on':''}" onclick="setLayoutMode('o')">Blocos abertos</button><button class="${m==='c'?'on':''}" onclick="setLayoutMode('c')">Blocos fechados</button></div>`:''}<span class="lay-hint">Editando o layout desta tela ${or==='h'?'na horizontal':'na vertical'}${hasCol?`, com os blocos ${m==='o'?'abertos':'fechados (vale para os que recolhem)'}`:''}.${or!==real?' Gire o aparelho para ver ao vivo.':''} Puxe o cantinho para mudar o tamanho e arraste pelos pontinhos para mudar de lugar.</span><button class="chip" onclick="gbReset()">Restaurar padrão</button><button class="chip on" onclick="toggleLayoutEdit()">Concluir</button></div>`; }
+  return `<div class="lay-bar"><div class="lay-seg"><button class="${or==='h'?'on':''}" onclick="setLayoutOrient('h')">Tela horizontal</button><button class="${or==='v'?'on':''}" onclick="setLayoutOrient('v')">Tela vertical</button></div>${hasCol?`<div class="lay-seg"><button class="${m==='o'?'on':''}" onclick="setLayoutMode('o')">Blocos abertos</button><button class="${m==='c'?'on':''}" onclick="setLayoutMode('c')">Blocos fechados</button></div>`:''}<span class="lay-hint">Editando o layout desta tela ${or==='h'?'na horizontal':'na vertical'}${hasCol?`, com os blocos ${m==='o'?'abertos':'fechados (vale para os que recolhem)'}`:''}.${or!==real?' Gire o aparelho para ver ao vivo.':''} Puxe o cantinho para mudar o tamanho e arraste pelos pontinhos para mudar de lugar. Solte na metade de baixo de um bloco estreito para deixar um embaixo do outro.</span><button class="chip" onclick="gbReset()">Restaurar padrão</button><button class="chip on" onclick="toggleLayoutEdit()">Concluir</button></div>`; }
 function gridView(tab){
   const mode=ui.editLayout||null, dash=tab==='dashboard'; let head;
   if(dash){ head=monthNav(); GBX={tab,items:BLOCK_ORDER.map(id=>({id,t:BLOCK_DEF[id].t,col:BLOCK_DEF[id].col})),by:{},html:{}}; }
   else { const r=gbTabItems(tab,mode); head=r.head; GBX={tab,items:r.items,by:{},html:{}};
     r.items.forEach(i=>{ GBX.by[i.id]={t:i.t,o:COLS,c:COLS,col:!!i.col,key:i.col}; GBX.html[i.id]=i.html; }); }
-  const p=gbPrefs(); let items='';
-  p.blocks.forEach(id=>{
+  const p=gbPrefs(); const cells=[];
+  p.blocks.forEach((id,bi)=>{
     const d=gbDef(id); if(!d) return;
     const hid=!!p.hidden[id]; if(hid&&!mode) return;
     const st=mode?mode:(gbIsClosed(id)?'c':'o'), openLike=!d.col||st==='o';
     let inner;
     if(hid) inner=`<div class="card gb-off"><span>${esc(d.t)} (oculto)</span></div>`;
     else { inner=dash?blockHtml(id,mode||undefined):GBX.html[id]; if(!inner||!String(inner).trim()) return; }
-    const span=gbSpan(id,st), h=(!hid&&openLike&&p.h[id])?p.h[id]:0;
-    const cls='gb'+(mode?' edit':'')+(h?' hset':'')+(p.stretch[id]?' stretch':'');
-    items+=`<div class="${cls}" data-id="${id}" style="--sp:${span};${h?`--h:${h}px`:''}">${mode?gbCtl(id,span,hid,!!h,openLike):''}${inner}${mode&&!hid?`<span class="gresize" onpointerdown="gbResizeStart(event,'${id}','${st}')" title="Puxe para mudar o tamanho"></span>`:''}</div>`;
+    const stk=!!p.stack[id]&&cells.length>0;
+    cells.push({id,hid,st,openLike,inner,span:gbSpan(id,st),h:(!hid&&openLike&&p.h[id])?p.h[id]:0,sub:stk,canStack:bi>0});
+  });
+  const groups=[]; cells.forEach(c=>{ if(c.sub&&groups.length) groups[groups.length-1].push(c); else groups.push([c]); });
+  const cellHtml=(c,grp)=>{ const cls='gb'+(mode?' edit':'')+(c.h?' hset':'')+(!grp&&p.stretch[c.id]?' stretch':'')+(grp==='sub'?' sub':'');
+    return `<div class="${cls}" data-id="${c.id}" style="${grp?'':'--sp:'+c.span+';'}${c.h?`--h:${c.h}px`:''}">${mode?gbCtl(c.id,c.span,c.hid,!!c.h,c.openLike,grp,c.canStack):''}${c.inner}${mode&&!c.hid?`<span class="gresize" onpointerdown="gbResizeStart(event,'${c.id}','${c.st}')" title="Puxe para mudar o tamanho"></span>`:''}</div>`; };
+  let items=''; groups.forEach(g=>{
+    if(g.length===1) items+=cellHtml(g[0],'');
+    else items+=`<div class="gb gstk" data-gid="${g[0].id}" data-last="${g[g.length-1].id}" style="--sp:${g[0].span}">${g.map((c,i)=>cellHtml(c,i?'sub':'head')).join('')}</div>`;
   });
   return head+layoutBar()+`<div class="dgrid" id="dgrid">${items}</div>`;
 }
@@ -1912,32 +1921,48 @@ function gbReset(){ gbSlot(ui.tab)[gbOrient()]={}; saveState(); render(); }
 let GR=null;
 function gbResizeStart(e,id,st){ e.preventDefault(); e.stopPropagation(); const grid=document.getElementById('dgrid'); if(!grid) return;
   const el=grid.querySelector('.gb[data-id="'+id+'"]'); if(!el) return; const card=el.querySelector(':scope>:not(.gctl):not(.gresize)'); const d=gbDef(id);
-  GR={id,st,el,card,unit:grid.clientWidth/COLS,sx:e.clientX,sy:e.clientY,w:el.getBoundingClientRect().width,ch:card?card.getBoundingClientRect().height:0,span:gbSpan(id,st),h:null,openLike:(!d.col||st==='o')};
+  const wr=el.parentNode.classList.contains('gstk')?el.parentNode:null, sub=!!(wr&&wr.dataset.gid!==id), wel=wr||el;
+  // vizinhos na mesma linha: servem para "encaixar" a largura (fechar a linha em 100%) e a altura (alinhar o fundo)
+  let rest=0, rowBottom=0, cardTop=card?card.getBoundingClientRect().top:0;
+  if(!sub){ const top=wel.getBoundingClientRect().top; let used=0, any=false;
+    [...grid.children].forEach(o=>{ if(o===wel) return; const r=o.getBoundingClientRect(); if(Math.abs(r.top-top)>24) return; any=true; used+=parseInt(o.style.getPropertyValue('--sp'))||0; const oc=o.querySelector(':scope>.card')||o; rowBottom=Math.max(rowBottom,oc.getBoundingClientRect().bottom); });
+    rest=any?COLS-used:0; if(!any) rowBottom=0; }
+  GR={id,st,el,wel,sub,card,unit:grid.clientWidth/COLS,sx:e.clientX,sy:e.clientY,w:wel.getBoundingClientRect().width,ch:card?card.getBoundingClientRect().height:0,span:gbSpan(id,st),h:null,openLike:(!d.col||st==='o'),rest,rowBottom,cardTop,snapRow:false};
   el.classList.add('resizing'); document.body.style.userSelect='none'; }
 document.addEventListener('pointermove',e=>{ if(!GR) return;
+  if(!GR.sub){
   let n=Math.round((GR.w+(e.clientX-GR.sx))/GR.unit); n=Math.max(10,Math.min(COLS,n));
   [12,16,24,32,36,48].forEach(v=>{ if(Math.abs(n-v)<=1) n=v; });
-  if(n!==GR.span){ GR.span=n; GR.el.style.setProperty('--sp',n); const g=GR.el.querySelector('.gw'); if(g) g.textContent=Math.round(n/COLS*100)+'%'; }
-  if(GR.openLike&&GR.card&&Math.abs(e.clientY-GR.sy)>6){ const nh=Math.max(90,Math.round(GR.ch+(e.clientY-GR.sy))); GR.h=nh; GR.el.classList.add('hset'); GR.el.style.setProperty('--h',nh+'px'); }
+  if(GR.rest>=10&&Math.abs(n-GR.rest)<=2) n=GR.rest;   // fecha a linha certinho até a borda direita
+  if(n!==GR.span){ GR.span=n; GR.wel.style.setProperty('--sp',n); const g=GR.el.querySelector('.gw'); if(g&&!GR.wel.classList.contains('gstk')) g.textContent=Math.round(n/COLS*100)+'%'; else if(g) g.textContent=Math.round(n/COLS*100)+'%'; }
+  }
+  if(GR.openLike&&GR.card&&Math.abs(e.clientY-GR.sy)>6){ let nh=Math.max(90,Math.round(GR.ch+(e.clientY-GR.sy)));
+    GR.snapRow=false; if(!GR.sub&&GR.rowBottom&&Math.abs(GR.cardTop+nh-GR.rowBottom)<=28){ nh=Math.max(90,Math.round(GR.rowBottom-GR.cardTop)); GR.snapRow=true; }   // alinha o fundo com os vizinhos
+    GR.h=nh; GR.el.classList.add('hset'); GR.el.style.setProperty('--h',nh+'px'); }
   if(e.clientY<90) window.scrollBy(0,-12); else if(e.clientY>innerHeight-90) window.scrollBy(0,12); });
 function gbResizeEnd(){ if(!GR) return; const g=GR; GR=null; document.body.style.userSelect=''; g.el.classList.remove('resizing');
-  const p=gbPrefs(), d=gbDef(g.id), k=(d.col&&g.st==='c')?'c':'o'; const v=(p.span[g.id]&&typeof p.span[g.id]==='object')?p.span[g.id]:{}; v[k]=g.span; p.span[g.id]=v;
-  if(g.h!=null) p.h[g.id]=g.h; saveState(); render(); }
+  const p=gbPrefs(), d=gbDef(g.id), k=(d.col&&g.st==='c')?'c':'o';
+  if(!g.sub){ const v=(p.span[g.id]&&typeof p.span[g.id]==='object')?p.span[g.id]:{}; v[k]=g.span; p.span[g.id]=v; }
+  if(g.h!=null){ if(g.snapRow){ delete p.h[g.id]; p.stretch[g.id]=true; } else p.h[g.id]=g.h; } saveState(); render(); }
 document.addEventListener('pointerup',gbResizeEnd); document.addEventListener('pointercancel',gbResizeEnd);
 // --- arrastar pelos pontinhos: mudar de lugar
 let GB=null;
-function gbDragStart(e,id){ e.preventDefault(); const grid=document.getElementById('dgrid'); if(!grid) return; const el=grid.querySelector('.gb[data-id="'+id+'"]'); if(!el) return; GB={id,el,grid,target:null,pos:null}; el.classList.add('dragging'); }
+function gbDragStart(e,id){ e.preventDefault(); const grid=document.getElementById('dgrid'); if(!grid) return; const el=grid.querySelector('.gb[data-id="'+id+'"]'); if(!el) return; GB={id,el,grid,target:null,pos:null,stack:false}; el.classList.add('dragging'); }
 function gbClear(){ document.querySelectorAll('.gb.drop-t,.gb.drop-b,.gb.drop-l,.gb.drop-r').forEach(n=>n.classList.remove('drop-t','drop-b','drop-l','drop-r')); }
 document.addEventListener('pointermove',e=>{ if(!GB) return;
   if(e.clientY<90) window.scrollBy(0,-14); else if(e.clientY>innerHeight-90) window.scrollBy(0,14);
-  const t=document.elementFromPoint(e.clientX,e.clientY); const over=t&&t.closest&&t.closest('.gb'); gbClear();
-  if(!over||over===GB.el||over.parentNode!==GB.grid){ GB.target=null; return; }
+  const t=document.elementFromPoint(e.clientX,e.clientY); let over=t&&t.closest&&t.closest('.gb'); if(over&&over.parentNode&&over.parentNode.classList&&over.parentNode.classList.contains('gstk')) over=over.parentNode; gbClear();
+  if(!over||over===GB.el||over.parentNode!==GB.grid||over.contains(GB.el)){ GB.target=null; GB.stack=false; return; }
   const r=over.getBoundingClientRect(), full=r.width>=GB.grid.getBoundingClientRect().width*.8;
+  const under=!full&&e.clientY>r.top+r.height*.6;   // soltar na metade de baixo de um bloco estreito = ficar embaixo dele, na mesma coluna
   const before=full?(e.clientY<r.top+r.height/2):(e.clientX<r.left+r.width/2);
-  GB.target=over.dataset.id; GB.pos=before?'before':'after';
-  over.classList.add(full?(before?'drop-t':'drop-b'):(before?'drop-l':'drop-r')); });
+  GB.stack=under; GB.target=(before&&!under)?(over.dataset.id||over.dataset.gid):(over.dataset.last||over.dataset.id); GB.pos=(before&&!under)?'before':'after';
+  over.classList.add(under?'drop-b':(full?(before?'drop-t':'drop-b'):(before?'drop-l':'drop-r'))); });
 function gbDragEnd(){ if(!GB) return; const g=GB; GB=null; gbClear(); g.el.classList.remove('dragging');
-  if(!g.target) return; const p=gbPrefs(); const b=p.blocks.filter(k=>k!==g.id); let i=b.indexOf(g.target); if(g.pos==='after') i++; b.splice(i,0,g.id); p.blocks=b; saveState(); render(); }
+  if(!g.target) return; const p=gbPrefs(); const o=p.blocks, ix=o.indexOf(g.id); let grp=[g.id];
+  if(p.stack[g.id]) delete p.stack[g.id]; else for(let k=ix+1;k<o.length&&p.stack[o[k]];k++) grp.push(o[k]);   // bloco-cabeça leva os empilhados junto
+  if(g.stack) p.stack[g.id]=true;
+  const b=o.filter(k=>!grp.includes(k)); let i=b.indexOf(g.target); if(i<0) return; if(g.pos==='after') i++; b.splice(i,0,...grp); p.blocks=b; saveState(); render(); }
 document.addEventListener('pointerup',gbDragEnd); document.addEventListener('pointercancel',gbDragEnd);
 
 const WIDGET_TITLES = { chart:'Entradas x Saídas', categories:'Saídas por categoria', categoriesIncome:'Entradas por categoria', commitments:'Comprometido com parcelas', projections:'Projeção dos próximos meses' };
