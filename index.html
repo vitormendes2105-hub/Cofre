@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="cofre-version" content="20261120-3">
+<meta name="cofre-version" content="20261121-1">
 <title>Cofre — Painel Financeiro</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -469,6 +469,8 @@
   @media (max-width:520px){ #mainnav.nv-top .nvquick button:not(.navgrip):not(.navtoggle),#mainnav.nv-bottom .nvquick button:not(.navgrip):not(.navtoggle){width:30px!important;min-width:30px!important;max-width:30px!important;height:30px!important;} }
   #mainnav.nv-top:not(.collapsed) .navgrip,#mainnav.nv-bottom:not(.collapsed) .navgrip{position:sticky;left:0;z-index:3;flex:none;}
   #mainnav.nv-top:not(.collapsed) .navtoggle,#mainnav.nv-bottom:not(.collapsed) .navtoggle{position:sticky;right:0;z-index:3;flex:none;}
+  #mainnav .nvquick button svg{display:block!important;width:20px;height:20px;flex:none;}
+  #mainnav.nv-top .nvquick button svg,#mainnav.nv-bottom .nvquick button svg{width:18px;height:18px;}
   @media (max-height:520px){
     #mainnav.nv-left:not(.collapsed),#mainnav.nv-right:not(.collapsed){padding-top:12px;padding-bottom:10px;}
     #mainnav.nv-left:not(.collapsed) .nvbrand,#mainnav.nv-right:not(.collapsed) .nvbrand{padding-bottom:2px;}
@@ -2534,6 +2536,16 @@ function privToggle(){ try{ localStorage.setItem('cofreHideValues',privOn()?'0':
 (function(){ let t=0; const go=()=>{ if(t) return; t=requestAnimationFrame(()=>{ t=0; if(privOn()) privWrap(); }); };
   try{ new MutationObserver(go).observe(document.body,{childList:true,subtree:true,characterData:true}); }catch(_){}
   document.body.classList.toggle('priv',privOn()); go(); })();
+// ===== Mantém a rolagem ao redesenhar a tela (expandir/recolher uma lista não volta ao topo). Trocar de aba ou de mês começa do topo. =====
+function scrollKey(el,root){ const p=[]; while(el&&el!==root){ const par=el.parentElement; if(!par) return null; p.push(Array.prototype.indexOf.call(par.children,el)); el=par; } return p.reverse().join('.'); }
+function scrollSnap(){ const root=document.getElementById('app'), out={y:window.scrollY||0,x:window.scrollX||0,els:[]};
+  if(root) root.querySelectorAll('*').forEach(el=>{ if(el.scrollTop>0||el.scrollLeft>0){ const k=scrollKey(el,root); if(k!==null) out.els.push([k,el.scrollTop,el.scrollLeft]); } }); return out; }
+function scrollRestore(sn){ const root=document.getElementById('app');
+  if(root) sn.els.forEach(([k,t,l])=>{ let el=root; for(const i of k.split('.')){ el=el&&el.children[+i]; } if(el){ el.scrollTop=t; el.scrollLeft=l; } });
+  if((window.scrollY||0)!==sn.y||(window.scrollX||0)!==sn.x) window.scrollTo(sn.x,sn.y); }
+(function(){ const r0=render; let lastKey=null;
+  render=function(){ const key=String(ui.tab)+'|'+(typeof curMonth==='function'?curMonth():''); const keep=(key===lastKey); const sn=keep?scrollSnap():null; lastKey=key;
+    const out=r0.apply(this,arguments); if(sn){ try{ scrollRestore(sn); }catch(_){} } return out; }; })();
 function alertBellHtml(){ const n=alertasVisiveis().length; return `<button class="al-bell" onclick="alertPanelToggle(true)" title="Alertas" aria-label="Alertas${n?': '+n:''}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>${n?`<span class="al-n">${n}</span>`:''}</button>`; }
 function alertPanelToggle(v){ ui.alertPanel=!!v; render(); }
 function alertPanelHtml(){ if(!ui.alertPanel) return ''; const a=alertasVisiveis();
